@@ -63,7 +63,7 @@ func LoadConf() {
 			util.LogWarn(fmt.Sprintf("创建配置文件出错\n错误原因:%v", err))
 		} else {
 			util.Log(fmt.Sprintf("生成默认配置文件\"%v\":\n%v", confFile, string(jsonByte)))
-			if err = ioutil.WriteFile(confFile, jsonByte, 0640); err != nil {
+			if err = ioutil.WriteFile(confFile, jsonByte, 0644); err != nil {
 				util.LogWarn(fmt.Sprintf("创建配置文件出错\n错误原因:%v", err))
 			}
 		}

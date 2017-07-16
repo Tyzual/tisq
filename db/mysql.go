@@ -16,11 +16,12 @@ const (
 	CREATE TABLE IF NOT EXISTS user
 	(UserId CHAR(32) PRIMARY KEY,
 	Email VARCHAR(32) NOT NULL,
-	DisplayName VARCHAR(16),
-	WebSite VARCHAR(64),
-	Avatar VARCHAR(256)
+	DisplayName VARCHAR(16) NULL,
+	WebSite VARCHAR(64) NULL,
+	Avatar VARCHAR(256) NULL
 	)
 	`
+
 	createCommentTableStmt = `CREATE TABLE IF NOT EXISTS comment
 	(CommentID INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, 
 	ArticleID CHAR(32) NOT NULL,
@@ -53,8 +54,11 @@ func (m *Mysql) Open() {
 		strBuff.WriteString(gConf.Mysql.User)
 	}
 	strBuff.WriteString(fmt.Sprintf("@tcp(%v:%d)/", gConf.Mysql.Host, gConf.Mysql.Port))
+	strBuff.WriteString("?parseTime=true")
+	str := strBuff.String()
+	util.LogTrace(fmt.Sprintf("连接数据库字符串：%v", str))
 	var err error
-	m.dbconn, err = sql.Open("mysql", strBuff.String())
+	m.dbconn, err = sql.Open("mysql", str)
 	if err != nil {
 		util.LogFatal(fmt.Sprintf("创建数据库出错，原因:%v", err))
 	} else {
@@ -95,4 +99,89 @@ Close 关闭数据库
 */
 func (m *Mysql) Close() {
 	m.dbconn.Close()
+}
+
+func checkUser(user *User) bool {
+	if user == nil {
+		return false
+	}
+	if len(user.UserID) != 32 {
+		return false
+	}
+	if len(user.Email) == 0 || len(user.Email) >= 32 {
+		return false
+	}
+	if len(user.DisplayName) >= 16 {
+		return false
+	}
+	if len(user.WebSite) >= 64 {
+		return false
+	}
+	if len(user.Avatar) >= 256 {
+		return false
+	}
+	return true
+}
+
+/*
+InsertUser 向数据库中插入新用户
+*/
+func (m *Mysql) InsertUser(user *User) bool {
+	if !checkUser(user) {
+		util.LogWarn(fmt.Sprintf("User数据错误:%#v", *user))
+		return false
+	}
+	var strBuff bytes.Buffer
+	var args = make([]interface{}, 0)
+	strBuff.WriteString("INSERT user SET UserId=?, Email=?")
+	args = append(args, user.UserID, user.Email)
+	if len(user.DisplayName) > 0 {
+		strBuff.WriteString(",DisplayName=?")
+		args = append(args, user.DisplayName)
+	}
+	if len(user.WebSite) > 0 {
+		strBuff.WriteString(",WebSite=?")
+		args = append(args, user.WebSite)
+	}
+	if len(user.Avatar) > 0 {
+		strBuff.WriteString(",Avatar=?")
+		args = append(args, user.Avatar)
+	}
+	str := strBuff.String()
+	util.LogTrace(fmt.Sprintf("数据库插入语句:%v", str))
+	util.LogTrace(fmt.Sprintf("参数:%v", args))
+	stmt, err := m.dbconn.Prepare(str)
+	if err != nil {
+		util.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
+		return false
+	}
+	_, err = stmt.Exec(args...)
+	if err != nil {
+		util.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
+		return false
+	}
+	util.LogTrace("插入数据库成功")
+	return true
+}
+
+/*
+GetUserByEmail 通过email获取用户信息
+*/
+func (m *Mysql) GetUserByEmail(email string) *User {
+	rows, err := m.dbconn.Query("select * from user where Email=?", email)
+	if err != nil {
+		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		return nil
+	}
+	defer rows.Close()
+	var user *User
+	for rows.Next() {
+		user = new(User)
+		rows.Scan(&user.UserID,
+			&user.Email,
+			&user.DisplayName,
+			&user.WebSite,
+			&user.Avatar)
+	}
+	return user
 }
