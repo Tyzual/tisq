@@ -25,6 +25,7 @@ const (
 	createCommentTableStmt = `CREATE TABLE IF NOT EXISTS comment
 	(CommentID INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, 
 	ArticleID CHAR(32) NOT NULL,
+	ArticleKey VARCHAR(512) NOT NULL,
 	UserId CHAR(32) NOT NULL,
 	Content VARCHAR(512) NOT NULL,
 	TimeStamp DATETIME NOT NULL,
@@ -184,4 +185,84 @@ func (m *Mysql) GetUserByEmail(email string) *User {
 			&user.Avatar)
 	}
 	return user
+}
+
+/*
+GetUserByID 通过id获取用户信息
+*/
+func (m *Mysql) GetUserByID(id string) *User {
+	rows, err := m.dbconn.Query("select * from user where UserId=?", id)
+	if err != nil {
+		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		return nil
+	}
+	defer rows.Close()
+	var user *User
+	for rows.Next() {
+		user = new(User)
+		rows.Scan(&user.UserID,
+			&user.Email,
+			&user.DisplayName,
+			&user.WebSite,
+			&user.Avatar)
+	}
+	return user
+}
+
+func checkComment(comm *Comment) bool {
+	if comm == nil {
+		return false
+	}
+
+	if len(comm.ArticleID) != 32 {
+		return false
+	}
+
+	if len(comm.ArticleKey) >= 128 {
+		return false
+	}
+
+	if len(comm.UserID) != 32 {
+		return false
+	}
+
+	if len(comm.Content) == 0 || len(comm.Content) >= 512 {
+		return false
+	}
+	return true
+}
+
+/*
+InsertComment 向数据库中插入新用户
+*/
+func (m *Mysql) InsertComment(comm *Comment) bool {
+	if !checkComment(comm) {
+		util.LogWarn(fmt.Sprintf("Comment数据错误:%#v", *comm))
+		return false
+	}
+
+	if m.GetUserByID(comm.UserID) == nil {
+		util.LogWarn("用户ID不存在")
+		return false
+	}
+
+	var args = make([]interface{}, 0, 4)
+	str := "INSERT comment SET ArticleId=?, ArticleKey=?, UserId=?,Content=?,TimeStamp=?"
+	args = append(args, comm.ArticleID, comm.ArticleKey, comm.UserID, comm.Content, comm.TimeStamp)
+	util.LogTrace(fmt.Sprintf("数据库插入语句:%v", str))
+	util.LogTrace(fmt.Sprintf("参数:%v", args))
+
+	stmt, err := m.dbconn.Prepare(str)
+	if err != nil {
+		util.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
+		return false
+	}
+	_, err = stmt.Exec(args...)
+	if err != nil {
+		util.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
+		return false
+	}
+	util.LogTrace("插入数据库成功")
+
+	return true
 }
