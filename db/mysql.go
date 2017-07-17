@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+
 	"github.com/tyzual/tisq/conf"
 	"github.com/tyzual/tisq/util"
 
-	//Mysql 驱动
+	//Mysql驱动
 	_ "github.com/go-sql-driver/mysql"
 )
 

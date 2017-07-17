@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
 	"github.com/tyzual/tisq/util"
 )
 

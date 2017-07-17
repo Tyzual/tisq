@@ -3,7 +3,8 @@ package db
 import (
 	"fmt"
 	"time"
-	"tisq/util"
+
+	"github.com/tyzual/tisq/util"
 )
 
 /*
