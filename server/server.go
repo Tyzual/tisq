@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"tisq/util"
+	"github.com/tyzual/tisq/util"
 )
 
 /*
