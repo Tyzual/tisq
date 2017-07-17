@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"tisq/conf"
-	"tisq/db"
-	"tisq/server"
-	"tisq/util"
+
+	"github.com/tyzual/tisq/conf"
+	"github.com/tyzual/tisq/db"
+	"github.com/tyzual/tisq/server"
+	"github.com/tyzual/tisq/util"
 )
 
 func main() {
