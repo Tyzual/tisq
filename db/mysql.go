@@ -53,7 +53,7 @@ func (m *Mysql) Open() {
 	strBuff.WriteString(gConf.Mysql.User)
 	if len(gConf.Mysql.Password) != 0 {
 		strBuff.WriteRune(':')
-		strBuff.WriteString(gConf.Mysql.User)
+		strBuff.WriteString(gConf.Mysql.Password)
 	}
 	strBuff.WriteString(fmt.Sprintf("@tcp(%v:%d)/", gConf.Mysql.Host, gConf.Mysql.Port))
 	strBuff.WriteString("?parseTime=true")
