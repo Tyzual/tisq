@@ -20,7 +20,7 @@ func main() {
 
 	http.HandleFunc("/addComment", server.HandleAddComment)
 	http.HandleFunc("/commentList", server.HandleCommentList)
-	util.LogFatal(fmt.Sprintf("%v", http.ListenAndServe(fmt.Sprintf("localhost:%d", tconf.GlobalConf().Server.Port), nil)))
+	util.LogFatal(fmt.Sprintf("%v", http.ListenAndServe(fmt.Sprintf("%v:%d", tconf.GlobalConf().Server.Domain, tconf.GlobalConf().Server.Port), nil)))
 }
 
 func test(mysql *db.Mysql) {
