@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/tyzual/tisq/util"
+	"github.com/tyzual/tisq/tutil"
 )
 
 var gConf = TConf{}

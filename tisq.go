@@ -7,7 +7,7 @@ import (
 	"github.com/tyzual/tisq/db"
 	"github.com/tyzual/tisq/server"
 	"github.com/tyzual/tisq/tconf"
-	"github.com/tyzual/tisq/util"
+	"github.com/tyzual/tisq/tutil"
 )
 
 func main() {

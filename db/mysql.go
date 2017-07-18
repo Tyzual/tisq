@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/tyzual/tisq/tconf"
-	"github.com/tyzual/tisq/util"
+	"github.com/tyzual/tisq/tutil"
 
 	//Mysql驱动
 	_ "github.com/go-sql-driver/mysql"

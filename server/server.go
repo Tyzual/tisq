@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/tyzual/tisq/util"
+	"github.com/tyzual/tisq/tutil"
 )
 
 /*

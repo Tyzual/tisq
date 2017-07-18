@@ -6,7 +6,7 @@ import (
 
 	"database/sql"
 
-	"github.com/tyzual/tisq/util"
+	"github.com/tyzual/tisq/tutil"
 )
 
 /*
