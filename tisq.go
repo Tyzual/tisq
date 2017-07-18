@@ -24,11 +24,15 @@ func main() {
 }
 
 func test(mysql *db.Mysql) {
-	// user := db.NewUser("e.tyzual@gmail.com", "tyzual", "tyzual.com", "")
-	// mysql.InsertUser(user)
+	user := db.NewUser("echizen@foxmail.com", "echizen", "tyzual.com", "")
+	mysql.InsertUser(user)
 
-	comm := db.NewComment(mysql, "abcdefg", "e.tyzual@gmail.com", "test content")
+	comm := db.NewComment(mysql, "abcdefg", "echizen@foxmail.com", "echizen content")
 	if comm != nil {
 		mysql.InsertComment(comm)
 	}
+
+	comms, users := mysql.GetCommentByArticleKey("abcdefg")
+	fmt.Printf("%#v\n", comms)
+	fmt.Printf("%#v\n", users)
 }

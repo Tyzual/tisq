@@ -149,6 +149,19 @@ func (m *Mysql) InsertUser(user *User) bool {
 		strBuff.WriteString(",Avatar=?")
 		args = append(args, user.Avatar)
 	}
+	strBuff.WriteString(" ON DUPLICATE KEY UPDATE ")
+	if len(user.DisplayName) > 0 {
+		strBuff.WriteString("DisplayName=?")
+		args = append(args, user.DisplayName)
+	}
+	if len(user.WebSite) > 0 {
+		strBuff.WriteString(",WebSite=?")
+		args = append(args, user.WebSite)
+	}
+	if len(user.Avatar) > 0 {
+		strBuff.WriteString(",Avatar=?")
+		args = append(args, user.Avatar)
+	}
 	str := strBuff.String()
 	util.LogTrace(fmt.Sprintf("数据库插入语句:%v", str))
 	util.LogTrace(fmt.Sprintf("参数:%v", args))
@@ -192,7 +205,7 @@ func (m *Mysql) GetUserByEmail(email string) *User {
 GetUserByID 通过id获取用户信息
 */
 func (m *Mysql) GetUserByID(id string) *User {
-	rows, err := m.dbconn.Query("select * from user where UserId=?", id)
+	rows, err := m.dbconn.Query("select * from user WHERE UserId=?", id)
 	if err != nil {
 		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
 		return nil
@@ -266,4 +279,65 @@ func (m *Mysql) InsertComment(comm *Comment) bool {
 	util.LogTrace("插入数据库成功")
 
 	return true
+}
+
+/*
+GetCommentByArticleKey 通过article key来查询评论
+*/
+func (m *Mysql) GetCommentByArticleKey(key string) ([]Comment, []User) {
+	if len(key) == 0 {
+		return nil, nil
+	}
+	rows, err := m.dbconn.Query("SELECT * FROM comment WHERE ArticleKey=?", key)
+	if err != nil {
+		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		return nil, nil
+	}
+	defer rows.Close()
+	cols, err := rows.Columns()
+	if err != nil {
+		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		return nil, nil
+	}
+	if len(cols) != 6 {
+		util.LogWarn("数据库格式不匹配")
+		return nil, nil
+	}
+	comms := make([]Comment, 0)
+	userIds := make([]interface{}, 0) // []string
+	for rows.Next() {
+		comm := Comment{}
+		rows.Scan(&comm.CommentID, &comm.ArticleID, &comm.ArticleKey, &comm.UserID, &comm.Content, &comm.TimeStamp)
+		comms = append(comms, comm)
+		userIds = append(userIds, comm.UserID)
+	}
+	if len(comms) == 0 {
+		util.Log(fmt.Sprintf("没找到key为%v的评论", key))
+		return nil, nil
+	}
+
+	var strBuff bytes.Buffer
+	strBuff.WriteString("SELECT * from user WHERE ")
+	for index := range userIds {
+		if index > 0 {
+			strBuff.WriteString("OR ")
+		}
+		strBuff.WriteString("UserId=? ")
+	}
+	str := strBuff.String()
+	util.LogTrace(fmt.Sprintf("数据库查询语句:%v", str))
+	util.LogTrace(fmt.Sprintf("参数:%v", userIds))
+	rows, err = m.dbconn.Query(str, userIds...)
+	if err != nil {
+		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		return nil, nil
+	}
+	users := make([]User, 0)
+	for rows.Next() {
+		user := User{}
+		rows.Scan(&user.UserID, &user.Email, &user.DisplayName, &user.WebSite, &user.Avatar)
+		users = append(users, user)
+	}
+
+	return comms, users
 }
