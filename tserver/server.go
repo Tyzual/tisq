@@ -1,4 +1,4 @@
-package server
+package tserver
 
 import (
 	"fmt"

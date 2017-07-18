@@ -1,4 +1,4 @@
-package db
+package tdb
 
 import (
 	"bytes"
@@ -45,10 +45,20 @@ type Mysql struct {
 	dbconn *sql.DB
 }
 
+var gMysql Mysql
+
+func init() {
+	gMysql.open()
+}
+
 /*
-Open 打开数据库连接
+GlobalSqlMgr 全局数据库对象
 */
-func (m *Mysql) Open() {
+func GlobalSqlMgr() *Mysql {
+	return &gMysql
+}
+
+func (m *Mysql) open() {
 	gConf := tconf.GlobalConf()
 	var strBuff bytes.Buffer
 	strBuff.WriteString(gConf.Mysql.User)

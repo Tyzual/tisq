@@ -47,10 +47,7 @@ func GlobalConf() *TConf {
 	return &gConf
 }
 
-/*
-LoadConf 加载配置
-*/
-func LoadConf() {
+func init() {
 	if _, err := os.Stat(confFile); os.IsNotExist(err) {
 		gConf.Server.Port = 34958
 		gConf.Server.Domain = "localhost"

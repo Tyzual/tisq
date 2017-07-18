@@ -1,4 +1,4 @@
-package db
+package tdb
 
 import (
 	"fmt"
@@ -59,7 +59,8 @@ func NewUser(email, displayName, webSite, avatar string) *User {
 /*
 NewComment 创建一个新评论的数据结构
 */
-func NewComment(m *Mysql, articleKey, userEmail, content string) *Comment {
+func NewComment(articleKey, userEmail, content string) *Comment {
+	m := GlobalSqlMgr()
 	user := m.GetUserByEmail(userEmail)
 	if user == nil {
 		util.LogWarn(fmt.Sprintf("没找到用户%v", userEmail))
