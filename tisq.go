@@ -16,7 +16,7 @@ func main() {
 	var mysql db.Mysql
 	mysql.Open()
 	defer mysql.Close()
-	// test(&mysql)
+	test(&mysql)
 
 	http.HandleFunc("/addComment", server.HandleAddComment)
 	http.HandleFunc("/commentList", server.HandleCommentList)
@@ -24,15 +24,14 @@ func main() {
 }
 
 func test(mysql *db.Mysql) {
-	user := db.NewUser("echizen@foxmail.com", "echizen", "tyzual.com", "")
-	mysql.InsertUser(user)
+	// user := db.NewUser("echizen@foxmail.com", "echizen", "tyzual.com", "")
+	// mysql.InsertUser(user)
 
-	comm := db.NewComment(mysql, "abcdefg", "echizen@foxmail.com", "echizen content")
-	if comm != nil {
-		mysql.InsertComment(comm)
-	}
+	// comm := db.NewComment(mysql, "abcdefg", "echizen@foxmail.com", "echizen content")
+	// if comm != nil {
+	// 	mysql.InsertComment(comm)
+	// }
 
-	comms, users := mysql.GetCommentByArticleKey("abcdefg")
-	fmt.Printf("%#v\n", comms)
-	fmt.Printf("%#v\n", users)
+	comms, _ := mysql.GetCommentByArticleKey("abcdefg")
+	fmt.Println(len(comms))
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"database/sql"
+
 	"github.com/tyzual/tisq/util"
 )
 
@@ -17,6 +19,7 @@ type Comment struct {
 	UserID     string
 	Content    string
 	TimeStamp  time.Time
+	Deleted    bool
 }
 
 /*
@@ -25,9 +28,9 @@ User user表对应的数据结构
 type User struct {
 	UserID      string
 	Email       string
-	DisplayName string
-	WebSite     string
-	Avatar      string
+	DisplayName sql.NullString
+	WebSite     sql.NullString
+	Avatar      sql.NullString
 }
 
 /*
@@ -38,9 +41,18 @@ func NewUser(email, displayName, webSite, avatar string) *User {
 	id := util.MD5([]byte(email))
 	user.UserID = id
 	user.Email = email
-	user.DisplayName = displayName
-	user.WebSite = webSite
-	user.Avatar = avatar
+	if len(displayName) != 0 {
+		user.DisplayName.Valid = true
+		user.DisplayName.String = displayName
+	}
+	if len(webSite) != 0 {
+		user.WebSite.Valid = true
+		user.WebSite.String = webSite
+	}
+	if len(avatar) != 0 {
+		user.Avatar.Valid = true
+		user.Avatar.String = avatar
+	}
 	return &user
 }
 
@@ -60,5 +72,6 @@ func NewComment(m *Mysql, articleKey, userEmail, content string) *Comment {
 	comm.ArticleID = util.MD5([]byte(articleKey))
 	comm.ArticleKey = articleKey
 	comm.Content = content
+	comm.Deleted = false
 	return &comm
 }

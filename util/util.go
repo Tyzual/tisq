@@ -1,9 +1,8 @@
 package util
 
 import (
-	"crypto/md5"
-	"fmt"
 	"log"
+	"runtime"
 )
 
 /*
@@ -40,12 +39,10 @@ func LogTrace(msg string) {
 		return
 	}
 
-	fmt.Println(msg)
-}
-
-/*
-MD5 计算MD5
-*/
-func MD5(data []byte) string {
-	return fmt.Sprintf("%x", md5.Sum(data))
+	_, fileName, fileLine, ok := runtime.Caller(1)
+	if ok {
+		log.Println("[", fileName, ":", fileLine, "]", msg)
+	} else {
+		log.Println(msg)
+	}
 }

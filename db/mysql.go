@@ -30,6 +30,7 @@ const (
 	UserId CHAR(32) NOT NULL,
 	Content VARCHAR(512) NOT NULL,
 	TimeStamp DATETIME NOT NULL,
+	Deleted BOOL DEFAULT false,
 		FOREIGN KEY (UserId)
 		REFERENCES user(UserId)
 		ON DELETE CASCADE
@@ -113,13 +114,13 @@ func checkUser(user *User) bool {
 	if len(user.Email) == 0 || len(user.Email) >= 32 {
 		return false
 	}
-	if len(user.DisplayName) >= 16 {
+	if user.DisplayName.Valid && len(user.DisplayName.String) >= 16 {
 		return false
 	}
-	if len(user.WebSite) >= 64 {
+	if user.WebSite.Valid && len(user.WebSite.String) >= 64 {
 		return false
 	}
-	if len(user.Avatar) >= 256 {
+	if user.Avatar.Valid && len(user.Avatar.String) >= 256 {
 		return false
 	}
 	return true
@@ -137,30 +138,30 @@ func (m *Mysql) InsertUser(user *User) bool {
 	var args = make([]interface{}, 0)
 	strBuff.WriteString("INSERT user SET UserId=?, Email=?")
 	args = append(args, user.UserID, user.Email)
-	if len(user.DisplayName) > 0 {
+	if user.DisplayName.Valid {
 		strBuff.WriteString(",DisplayName=?")
-		args = append(args, user.DisplayName)
+		args = append(args, user.DisplayName.String)
 	}
-	if len(user.WebSite) > 0 {
+	if user.WebSite.Valid {
 		strBuff.WriteString(",WebSite=?")
-		args = append(args, user.WebSite)
+		args = append(args, user.WebSite.String)
 	}
-	if len(user.Avatar) > 0 {
+	if user.Avatar.Valid {
 		strBuff.WriteString(",Avatar=?")
-		args = append(args, user.Avatar)
+		args = append(args, user.Avatar.String)
 	}
 	strBuff.WriteString(" ON DUPLICATE KEY UPDATE ")
-	if len(user.DisplayName) > 0 {
+	if user.DisplayName.Valid {
 		strBuff.WriteString("DisplayName=?")
-		args = append(args, user.DisplayName)
+		args = append(args, user.DisplayName.String)
 	}
-	if len(user.WebSite) > 0 {
+	if user.WebSite.Valid {
 		strBuff.WriteString(",WebSite=?")
-		args = append(args, user.WebSite)
+		args = append(args, user.WebSite.String)
 	}
-	if len(user.Avatar) > 0 {
+	if user.Avatar.Valid {
 		strBuff.WriteString(",Avatar=?")
-		args = append(args, user.Avatar)
+		args = append(args, user.Avatar.String)
 	}
 	str := strBuff.String()
 	util.LogTrace(fmt.Sprintf("数据库插入语句:%v", str))
@@ -288,7 +289,7 @@ func (m *Mysql) GetCommentByArticleKey(key string) ([]Comment, []User) {
 	if len(key) == 0 {
 		return nil, nil
 	}
-	rows, err := m.dbconn.Query("SELECT * FROM comment WHERE ArticleKey=?", key)
+	rows, err := m.dbconn.Query("SELECT * FROM comment WHERE ArticleKey=? AND Deleted=false", key)
 	if err != nil {
 		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
 		return nil, nil
@@ -299,15 +300,18 @@ func (m *Mysql) GetCommentByArticleKey(key string) ([]Comment, []User) {
 		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
 		return nil, nil
 	}
-	if len(cols) != 6 {
-		util.LogWarn("数据库格式不匹配")
+	if len(cols) != 7 {
+		util.LogTrace("数据库格式不匹配")
 		return nil, nil
 	}
 	comms := make([]Comment, 0)
 	userIds := make([]interface{}, 0) // []string
 	for rows.Next() {
 		comm := Comment{}
-		rows.Scan(&comm.CommentID, &comm.ArticleID, &comm.ArticleKey, &comm.UserID, &comm.Content, &comm.TimeStamp)
+		if err := rows.Scan(&comm.CommentID, &comm.ArticleID, &comm.ArticleKey, &comm.UserID, &comm.Content, &comm.TimeStamp, &comm.Deleted); err != nil {
+			util.LogTrace(fmt.Sprintf("解析Comment数据结构错误，原因:%v", err))
+			return nil, nil
+		}
 		comms = append(comms, comm)
 		userIds = append(userIds, comm.UserID)
 	}
@@ -335,7 +339,9 @@ func (m *Mysql) GetCommentByArticleKey(key string) ([]Comment, []User) {
 	users := make([]User, 0)
 	for rows.Next() {
 		user := User{}
-		rows.Scan(&user.UserID, &user.Email, &user.DisplayName, &user.WebSite, &user.Avatar)
+		if err := rows.Scan(&user.UserID, &user.Email, &user.DisplayName, &user.WebSite, &user.Avatar); err != nil {
+			util.LogTrace(fmt.Sprintf("解析User数据结构错误，原因:%v", err))
+		}
 		users = append(users, user)
 	}
 
