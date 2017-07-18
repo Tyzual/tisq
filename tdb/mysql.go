@@ -14,26 +14,35 @@ import (
 
 const (
 	createUserTableStmt = `
-	CREATE TABLE IF NOT EXISTS user
-	(UserId CHAR(32) PRIMARY KEY,
-	Email VARCHAR(32) NOT NULL,
-	DisplayName VARCHAR(16) NULL,
-	WebSite VARCHAR(64) NULL,
-	Avatar VARCHAR(256) NULL
+	CREATE TABLE IF NOT EXISTS user (
+		UserId CHAR(32) PRIMARY KEY,
+		Email VARCHAR(32) NOT NULL,
+		DisplayName VARCHAR(16) NULL,
+		WebSite VARCHAR(64) NULL,
+		Avatar VARCHAR(256) NULL
 	)
 	`
+	createSiteTableStmt = `CREATE TABLE IF NOT EXISTS site (
+		SiteId CHAR(32) PRIMARY KEY,
+		SiteDomain VARCHAR(64) NOT NULL,
+		PrivateKey CHAR(16) NOT NULL
+	)`
 
-	createCommentTableStmt = `CREATE TABLE IF NOT EXISTS comment
-	(CommentID INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, 
-	ArticleID CHAR(32) NOT NULL,
-	ArticleKey VARCHAR(512) NOT NULL,
-	UserId CHAR(32) NOT NULL,
-	Content VARCHAR(512) NOT NULL,
-	TimeStamp DATETIME NOT NULL,
-	Deleted BOOL DEFAULT false,
-		FOREIGN KEY (UserId)
-		REFERENCES user(UserId)
-		ON DELETE CASCADE
+	createCommentTableStmt = `CREATE TABLE IF NOT EXISTS comment (
+		CommentID INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, 
+		ArticleID CHAR(32) NOT NULL,
+		ArticleKey VARCHAR(512) NOT NULL,
+		UserId CHAR(32) NOT NULL,
+		SiteId CHAR(32) NOT NULL,
+		Content VARCHAR(512) NOT NULL,
+		TimeStamp DATETIME NOT NULL,
+		Deleted BOOL DEFAULT false,
+			FOREIGN KEY (UserId)
+			REFERENCES user(UserId)
+			ON DELETE CASCADE,
+			FOREIGN KEY (SiteId)
+			REFERENCES site(SiteId)
+			ON DELETE CASCADE
 	)
 	`
 )
@@ -69,42 +78,47 @@ func (m *Mysql) open() {
 	strBuff.WriteString(fmt.Sprintf("@tcp(%v:%d)/", gConf.Mysql.Host, gConf.Mysql.Port))
 	strBuff.WriteString("?parseTime=true")
 	str := strBuff.String()
-	util.LogTrace(fmt.Sprintf("连接数据库字符串：%v", str))
+	tutil.LogTrace(fmt.Sprintf("连接数据库字符串：%v", str))
 	var err error
 	m.dbconn, err = sql.Open("mysql", str)
 	if err != nil {
-		util.LogFatal(fmt.Sprintf("创建数据库出错，原因:%v", err))
+		tutil.LogFatal(fmt.Sprintf("创建数据库出错，原因:%v", err))
 	} else {
-		util.Log("连接数据库成功")
+		tutil.Log("连接数据库成功")
 	}
 
 	if len(gConf.Mysql.DbName) == 0 {
-		util.LogFatal("数据库名为空")
+		tutil.LogFatal("数据库名为空")
 	}
 	_, err = m.dbconn.Exec("CREATE DATABASE IF NOT EXISTS " + gConf.Mysql.DbName + " DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci")
 	if err != nil {
-		util.LogFatal(fmt.Sprintf("创建数据库出错，原因:%v", err))
+		tutil.LogFatal(fmt.Sprintf("创建数据库出错，原因:%v", err))
 	} else {
-		util.Log(fmt.Sprintf("创建数据库%v成功", gConf.Mysql.DbName))
+		tutil.Log(fmt.Sprintf("创建数据库%v成功", gConf.Mysql.DbName))
 	}
 	_, err = m.dbconn.Exec("USE " + gConf.Mysql.DbName)
 	if err != nil {
-		util.LogFatal(fmt.Sprintf("切换数据库出错，原因:%v", err))
+		tutil.LogFatal(fmt.Sprintf("切换数据库出错，原因:%v", err))
 	} else {
-		util.Log(fmt.Sprintf("切换到数据库%v", gConf.Mysql.DbName))
+		tutil.Log(fmt.Sprintf("切换到数据库%v", gConf.Mysql.DbName))
 	}
 
 	_, err = m.dbconn.Exec(createUserTableStmt)
 	if err != nil {
-		util.LogFatal(fmt.Sprintf("创建User表出错，原因:%v", err))
+		tutil.LogFatal(fmt.Sprintf("创建User表出错，原因:%v", err))
+	}
+
+	_, err = m.dbconn.Exec(createSiteTableStmt)
+	if err != nil {
+		tutil.LogFatal(fmt.Sprintf("创建Site表出错，原因:%v", err))
 	}
 
 	_, err = m.dbconn.Exec(createCommentTableStmt)
 	if err != nil {
-		util.LogFatal(fmt.Sprintf("创建Comment表出错，原因:%v", err))
+		tutil.LogFatal(fmt.Sprintf("创建Comment表出错，原因:%v", err))
 	}
 
-	util.Log("初始化数据库成功")
+	tutil.Log("初始化数据库成功")
 }
 
 /*
@@ -141,7 +155,7 @@ InsertUser 向数据库中插入新用户
 */
 func (m *Mysql) InsertUser(user *User) bool {
 	if !checkUser(user) {
-		util.LogWarn(fmt.Sprintf("User数据错误:%#v", *user))
+		tutil.LogWarn(fmt.Sprintf("User数据错误:%#v", *user))
 		return false
 	}
 	var strBuff bytes.Buffer
@@ -174,19 +188,20 @@ func (m *Mysql) InsertUser(user *User) bool {
 		args = append(args, user.Avatar.String)
 	}
 	str := strBuff.String()
-	util.LogTrace(fmt.Sprintf("数据库插入语句:%v", str))
-	util.LogTrace(fmt.Sprintf("参数:%v", args))
+	tutil.LogTrace(fmt.Sprintf("数据库插入语句:%v", str))
+	tutil.LogTrace(fmt.Sprintf("参数:%v", args))
 	stmt, err := m.dbconn.Prepare(str)
 	if err != nil {
-		util.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
+		tutil.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
 		return false
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(args...)
 	if err != nil {
-		util.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
+		tutil.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
 		return false
 	}
-	util.LogTrace("插入数据库成功")
+	tutil.LogTrace("插入数据库成功")
 	return true
 }
 
@@ -196,7 +211,7 @@ GetUserByEmail 通过email获取用户信息
 func (m *Mysql) GetUserByEmail(email string) *User {
 	rows, err := m.dbconn.Query("select * from user where Email=?", email)
 	if err != nil {
-		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
 		return nil
 	}
 	defer rows.Close()
@@ -218,7 +233,7 @@ GetUserByID 通过id获取用户信息
 func (m *Mysql) GetUserByID(id string) *User {
 	rows, err := m.dbconn.Query("select * from user WHERE UserId=?", id)
 	if err != nil {
-		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
 		return nil
 	}
 	defer rows.Close()
@@ -243,6 +258,10 @@ func checkComment(comm *Comment) bool {
 		return false
 	}
 
+	if len(comm.SiteID) != 32 {
+		return false
+	}
+
 	if len(comm.ArticleKey) >= 128 {
 		return false
 	}
@@ -262,32 +281,33 @@ InsertComment 向数据库中插入新用户
 */
 func (m *Mysql) InsertComment(comm *Comment) bool {
 	if !checkComment(comm) {
-		util.LogWarn(fmt.Sprintf("Comment数据错误:%#v", *comm))
+		tutil.LogWarn(fmt.Sprintf("Comment数据错误:%#v", *comm))
 		return false
 	}
 
 	if m.GetUserByID(comm.UserID) == nil {
-		util.LogWarn("用户ID不存在")
+		tutil.LogWarn("用户ID不存在")
 		return false
 	}
 
 	var args = make([]interface{}, 0, 4)
-	str := "INSERT comment SET ArticleId=?, ArticleKey=?, UserId=?,Content=?,TimeStamp=?"
-	args = append(args, comm.ArticleID, comm.ArticleKey, comm.UserID, comm.Content, comm.TimeStamp)
-	util.LogTrace(fmt.Sprintf("数据库插入语句:%v", str))
-	util.LogTrace(fmt.Sprintf("参数:%v", args))
+	str := "INSERT comment SET ArticleId=?, ArticleKey=?, UserId=?,Content=?,TimeStamp=?,SiteId=?"
+	args = append(args, comm.ArticleID, comm.ArticleKey, comm.UserID, comm.Content, comm.TimeStamp, comm.SiteID)
+	tutil.LogTrace(fmt.Sprintf("数据库插入语句:%v", str))
+	tutil.LogTrace(fmt.Sprintf("参数:%v", args))
 
 	stmt, err := m.dbconn.Prepare(str)
 	if err != nil {
-		util.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
+		tutil.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
 		return false
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(args...)
 	if err != nil {
-		util.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
+		tutil.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
 		return false
 	}
-	util.LogTrace("插入数据库成功")
+	tutil.LogTrace("插入数据库成功")
 
 	return true
 }
@@ -299,34 +319,34 @@ func (m *Mysql) GetCommentByArticleKey(key string) ([]Comment, []User) {
 	if len(key) == 0 {
 		return nil, nil
 	}
-	rows, err := m.dbconn.Query("SELECT * FROM comment WHERE ArticleKey=? AND Deleted=false", key)
+	comments, err := m.dbconn.Query("SELECT * FROM comment WHERE ArticleKey=? AND Deleted=false", key)
 	if err != nil {
-		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
 		return nil, nil
 	}
-	defer rows.Close()
-	cols, err := rows.Columns()
+	defer comments.Close()
+	cols, err := comments.Columns()
 	if err != nil {
-		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
 		return nil, nil
 	}
 	if len(cols) != 7 {
-		util.LogTrace("数据库格式不匹配")
+		tutil.LogTrace("数据库格式不匹配")
 		return nil, nil
 	}
 	comms := make([]Comment, 0)
 	userIds := make([]interface{}, 0) // []string
-	for rows.Next() {
+	for comments.Next() {
 		comm := Comment{}
-		if err := rows.Scan(&comm.CommentID, &comm.ArticleID, &comm.ArticleKey, &comm.UserID, &comm.Content, &comm.TimeStamp, &comm.Deleted); err != nil {
-			util.LogTrace(fmt.Sprintf("解析Comment数据结构错误，原因:%v", err))
+		if err := comments.Scan(&comm.CommentID, &comm.ArticleID, &comm.ArticleKey, &comm.UserID, &comm.Content, &comm.TimeStamp, &comm.Deleted); err != nil {
+			tutil.LogTrace(fmt.Sprintf("解析Comment数据结构错误，原因:%v", err))
 			return nil, nil
 		}
 		comms = append(comms, comm)
 		userIds = append(userIds, comm.UserID)
 	}
 	if len(comms) == 0 {
-		util.Log(fmt.Sprintf("没找到key为%v的评论", key))
+		tutil.Log(fmt.Sprintf("没找到key为%v的评论", key))
 		return nil, nil
 	}
 
@@ -339,21 +359,78 @@ func (m *Mysql) GetCommentByArticleKey(key string) ([]Comment, []User) {
 		strBuff.WriteString("UserId=? ")
 	}
 	str := strBuff.String()
-	util.LogTrace(fmt.Sprintf("数据库查询语句:%v", str))
-	util.LogTrace(fmt.Sprintf("参数:%v", userIds))
-	rows, err = m.dbconn.Query(str, userIds...)
+	tutil.LogTrace(fmt.Sprintf("数据库查询语句:%v", str))
+	tutil.LogTrace(fmt.Sprintf("参数:%v", userIds))
+	dbUsers, err := m.dbconn.Query(str, userIds...)
 	if err != nil {
-		util.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
 		return nil, nil
 	}
+	defer dbUsers.Close()
 	users := make([]User, 0)
-	for rows.Next() {
+	for dbUsers.Next() {
 		user := User{}
-		if err := rows.Scan(&user.UserID, &user.Email, &user.DisplayName, &user.WebSite, &user.Avatar); err != nil {
-			util.LogTrace(fmt.Sprintf("解析User数据结构错误，原因:%v", err))
+		if err := dbUsers.Scan(&user.UserID, &user.Email, &user.DisplayName, &user.WebSite, &user.Avatar); err != nil {
+			tutil.LogTrace(fmt.Sprintf("解析User数据结构错误，原因:%v", err))
 		}
 		users = append(users, user)
 	}
 
 	return comms, users
+}
+
+func checkSite(site *Site) bool {
+	if site == nil {
+		return false
+	}
+	if len(site.SiteID) != 32 {
+		return false
+	}
+	if len(site.SiteDomain) == 0 || len(site.SiteDomain) >= 64 {
+		return false
+	}
+	if len(site.PrivateKey) != 16 {
+		return false
+	}
+	return true
+}
+
+/*
+InsertSite 插入site数据
+*/
+func (m *Mysql) InsertSite(site *Site) bool {
+	if !checkSite(site) {
+		tutil.LogWarn(fmt.Sprintf("Site数据错误:%#v", *site))
+		return false
+	}
+	stmt, err := m.dbconn.Prepare("INSERT site SET SiteId=?, SiteDomain=?, PrivateKey=?")
+	if err != nil {
+		tutil.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
+		return false
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(site.SiteID, site.SiteDomain, site.PrivateKey)
+	if err != nil {
+		tutil.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
+		return false
+	}
+	tutil.LogTrace("插入数据库成功")
+	return true
+}
+
+/*
+GetSiteByDomain 通过域名返回站点
+*/
+func (m *Mysql) GetSiteByDomain(domain string) *Site {
+	sites, err := m.dbconn.Query("SELECT * FROM site WHERE SiteDomain=?", domain)
+	if err != nil {
+		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		return nil
+	}
+	defer sites.Close()
+	site := Site{}
+	for sites.Next() {
+		sites.Scan(&site.SiteID, &site.SiteDomain, &site.PrivateKey)
+	}
+	return &site
 }

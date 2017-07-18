@@ -58,22 +58,22 @@ func init() {
 		gConf.Mysql.User = "root"
 		jsonByte, err := json.MarshalIndent(gConf, "", "\t")
 		if err != nil {
-			util.LogWarn(fmt.Sprintf("创建配置文件出错\n错误原因:%v", err))
+			tutil.LogWarn(fmt.Sprintf("创建配置文件出错\n错误原因:%v", err))
 		} else {
-			util.Log(fmt.Sprintf("生成默认配置文件\"%v\":\n%v", confFile, string(jsonByte)))
+			tutil.Log(fmt.Sprintf("生成默认配置文件\"%v\":\n%v", confFile, string(jsonByte)))
 			if err = ioutil.WriteFile(confFile, jsonByte, 0644); err != nil {
-				util.LogWarn(fmt.Sprintf("创建配置文件出错\n错误原因:%v", err))
+				tutil.LogWarn(fmt.Sprintf("创建配置文件出错\n错误原因:%v", err))
 			}
 		}
 	} else {
 		if jsonByte, err := ioutil.ReadFile(confFile); err != nil {
-			util.LogWarn(fmt.Sprintf("读取配置文件出错\n错误原因:%v", err))
+			tutil.LogWarn(fmt.Sprintf("读取配置文件出错\n错误原因:%v", err))
 		} else {
 			if err := json.Unmarshal(jsonByte, &gConf); err != nil {
-				util.LogWarn(fmt.Sprintf("读取配置文件出错\n错误原因:%v", err))
+				tutil.LogWarn(fmt.Sprintf("读取配置文件出错\n错误原因:%v", err))
 			} else {
-				util.Log(fmt.Sprintf("域名:%v", gConf.Server.Domain))
-				util.Log(fmt.Sprintf("端口:%v", gConf.Server.Port))
+				tutil.Log(fmt.Sprintf("域名:%v", gConf.Server.Domain))
+				tutil.Log(fmt.Sprintf("端口:%v", gConf.Server.Port))
 			}
 		}
 	}

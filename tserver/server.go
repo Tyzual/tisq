@@ -17,7 +17,7 @@ func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ERROR: USE POST"))
 		return
 	}
-	util.Log(fmt.Sprintf("%v", r.Method))
+	tutil.Log(fmt.Sprintf("%v", r.Method))
 }
 
 /*
@@ -30,5 +30,5 @@ func HandleCommentList(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ERROR: USE POST"))
 		return
 	}
-	util.Log(fmt.Sprintf("%v", r.Method))
+	tutil.Log(fmt.Sprintf("%v", r.Method))
 }

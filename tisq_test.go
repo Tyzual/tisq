@@ -11,7 +11,10 @@ func TestDb(t *testing.T) {
 	user := tdb.NewUser("echizen@foxmail.com", "echizen", "tyzual.com", "")
 	tdb.GlobalSqlMgr().InsertUser(user)
 
-	comm := tdb.NewComment("abcdefg", "echizen@foxmail.com", "echizen content")
+	site := tdb.NewSite("tyzual.com")
+	tdb.GlobalSqlMgr().InsertSite(site)
+
+	comm := tdb.NewComment("tyzual.com", "abcdefg", "echizen@foxmail.com", "echizen content")
 	if comm != nil {
 		tdb.GlobalSqlMgr().InsertComment(comm)
 	}
