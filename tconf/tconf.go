@@ -1,4 +1,4 @@
-package conf
+package tconf
 
 import (
 	"encoding/json"

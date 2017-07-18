@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/tyzual/tisq/conf"
+	"github.com/tyzual/tisq/tconf"
 	"github.com/tyzual/tisq/util"
 
 	//Mysql驱动
@@ -48,7 +48,7 @@ type Mysql struct {
 Open 打开数据库连接
 */
 func (m *Mysql) Open() {
-	gConf := conf.GlobalConf()
+	gConf := tconf.GlobalConf()
 	var strBuff bytes.Buffer
 	strBuff.WriteString(gConf.Mysql.User)
 	if len(gConf.Mysql.Password) != 0 {
