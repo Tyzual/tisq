@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/tyzual/tisq/tconf"
-	"github.com/tyzual/tisq/tserver"
+	"github.com/tyzual/tisq/tserverlogic"
 	"github.com/tyzual/tisq/tutil"
 )
 
