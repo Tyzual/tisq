@@ -14,6 +14,23 @@ var gConf = TConf{}
 const confFile = "/etc/tisq.cnf"
 
 /*
+配置文件格式
+{
+"Server": {
+	"Domain": "localhost",
+	"Port": 34958
+},
+"Mysql": {
+	"User": "root",
+	"Password": "",
+	"Host": "localhost",
+	"Port": 3306,
+	"DbName": "TISQ"
+}
+}
+*/
+
+/*
 TConf 服务器的全局配置
 */
 type TConf struct {

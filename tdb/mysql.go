@@ -18,8 +18,7 @@ const (
 		UserId CHAR(32) PRIMARY KEY,
 		Email VARCHAR(32) NOT NULL,
 		DisplayName VARCHAR(16) NULL,
-		WebSite VARCHAR(64) NULL,
-		Avatar VARCHAR(256) NULL
+		WebSite VARCHAR(64) NULL
 	)
 	`
 	createSiteTableStmt = `CREATE TABLE IF NOT EXISTS site (
@@ -63,7 +62,7 @@ func init() {
 /*
 GlobalSqlMgr 全局数据库对象
 */
-func GlobalSqlMgr() *Mysql {
+func GlobalSQLMgr() *Mysql {
 	return &gMysql
 }
 
@@ -144,9 +143,6 @@ func checkUser(user *User) bool {
 	if user.WebSite.Valid && len(user.WebSite.String) >= 64 {
 		return false
 	}
-	if user.Avatar.Valid && len(user.Avatar.String) >= 256 {
-		return false
-	}
 	return true
 }
 
@@ -170,10 +166,6 @@ func (m *Mysql) InsertUser(user *User) bool {
 		strBuff.WriteString(",WebSite=?")
 		args = append(args, user.WebSite.String)
 	}
-	if user.Avatar.Valid {
-		strBuff.WriteString(",Avatar=?")
-		args = append(args, user.Avatar.String)
-	}
 	strBuff.WriteString(" ON DUPLICATE KEY UPDATE ")
 	if user.DisplayName.Valid {
 		strBuff.WriteString("DisplayName=?")
@@ -182,10 +174,6 @@ func (m *Mysql) InsertUser(user *User) bool {
 	if user.WebSite.Valid {
 		strBuff.WriteString(",WebSite=?")
 		args = append(args, user.WebSite.String)
-	}
-	if user.Avatar.Valid {
-		strBuff.WriteString(",Avatar=?")
-		args = append(args, user.Avatar.String)
 	}
 	str := strBuff.String()
 	tutil.LogTrace(fmt.Sprintf("数据库插入语句:%v", str))
@@ -221,8 +209,7 @@ func (m *Mysql) GetUserByEmail(email string) *User {
 		rows.Scan(&user.UserID,
 			&user.Email,
 			&user.DisplayName,
-			&user.WebSite,
-			&user.Avatar)
+			&user.WebSite)
 	}
 	return user
 }
@@ -243,8 +230,7 @@ func (m *Mysql) GetUserByID(id string) *User {
 		rows.Scan(&user.UserID,
 			&user.Email,
 			&user.DisplayName,
-			&user.WebSite,
-			&user.Avatar)
+			&user.WebSite)
 	}
 	return user
 }
@@ -309,6 +295,16 @@ func (m *Mysql) InsertComment(comm *Comment) bool {
 	}
 	tutil.LogTrace("插入数据库成功")
 
+	rows, err := m.dbconn.Query("SELECT CommentID FROM comment WHERE ArticleId=? AND ArticleKey=? AND UserId=? AND Content=? AND TimeStamp=? AND SiteId=?", comm.ArticleID, comm.ArticleKey, comm.UserID, comm.Content, comm.TimeStamp, comm.SiteID)
+	if err != nil {
+		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
+		return false
+	}
+	defer rows.Close()
+	for rows.Next() {
+		rows.Scan(&comm.CommentID)
+	}
+
 	return true
 }
 
@@ -325,20 +321,11 @@ func (m *Mysql) GetCommentByArticleKey(key string) ([]Comment, []User) {
 		return nil, nil
 	}
 	defer comments.Close()
-	cols, err := comments.Columns()
-	if err != nil {
-		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
-		return nil, nil
-	}
-	if len(cols) != 7 {
-		tutil.LogTrace("数据库格式不匹配")
-		return nil, nil
-	}
 	comms := make([]Comment, 0)
 	userIds := make([]interface{}, 0) // []string
 	for comments.Next() {
 		comm := Comment{}
-		if err := comments.Scan(&comm.CommentID, &comm.ArticleID, &comm.ArticleKey, &comm.UserID, &comm.Content, &comm.TimeStamp, &comm.Deleted); err != nil {
+		if err := comments.Scan(&comm.CommentID, &comm.ArticleID, &comm.ArticleKey, &comm.UserID, &comm.SiteID, &comm.Content, &comm.TimeStamp, &comm.Deleted); err != nil {
 			tutil.LogTrace(fmt.Sprintf("解析Comment数据结构错误，原因:%v", err))
 			return nil, nil
 		}
@@ -370,7 +357,7 @@ func (m *Mysql) GetCommentByArticleKey(key string) ([]Comment, []User) {
 	users := make([]User, 0)
 	for dbUsers.Next() {
 		user := User{}
-		if err := dbUsers.Scan(&user.UserID, &user.Email, &user.DisplayName, &user.WebSite, &user.Avatar); err != nil {
+		if err := dbUsers.Scan(&user.UserID, &user.Email, &user.DisplayName, &user.WebSite); err != nil {
 			tutil.LogTrace(fmt.Sprintf("解析User数据结构错误，原因:%v", err))
 		}
 		users = append(users, user)
@@ -428,9 +415,11 @@ func (m *Mysql) GetSiteByDomain(domain string) *Site {
 		return nil
 	}
 	defer sites.Close()
-	site := Site{}
+	var site *Site
 	for sites.Next() {
+		site = new(Site)
 		sites.Scan(&site.SiteID, &site.SiteDomain, &site.PrivateKey)
+		return site
 	}
-	return &site
+	return site
 }

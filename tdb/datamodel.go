@@ -31,7 +31,6 @@ type User struct {
 	Email       string
 	DisplayName sql.NullString
 	WebSite     sql.NullString
-	Avatar      sql.NullString
 }
 
 /*
@@ -46,7 +45,7 @@ type Site struct {
 /*
 NewUser 创建一个新用户的数据结构
 */
-func NewUser(email, displayName, webSite, avatar string) *User {
+func NewUser(email, displayName, webSite string) *User {
 	user := User{}
 	id := tutil.MD5([]byte(email))
 	user.UserID = id
@@ -58,10 +57,6 @@ func NewUser(email, displayName, webSite, avatar string) *User {
 	if len(webSite) != 0 {
 		user.WebSite.Valid = true
 		user.WebSite.String = webSite
-	}
-	if len(avatar) != 0 {
-		user.Avatar.Valid = true
-		user.Avatar.String = avatar
 	}
 	return &user
 }
@@ -83,23 +78,17 @@ func NewSite(domain string) *Site {
 /*
 NewComment 创建一个新评论的数据结构
 */
-func NewComment(domain, articleKey, userEmail, content string) *Comment {
-	m := GlobalSqlMgr()
+func NewComment(siteID, articleKey, userEmail, content string) *Comment {
+	m := GlobalSQLMgr()
 	user := m.GetUserByEmail(userEmail)
 	if user == nil {
 		tutil.LogWarn(fmt.Sprintf("没找到用户%v", userEmail))
 		return nil
 	}
 
-	site := m.GetSiteByDomain(domain)
-	if site == nil {
-		tutil.LogWarn(fmt.Sprintf("没找到站点%v", domain))
-		return nil
-	}
-
 	comm := Comment{}
 	comm.UserID = user.UserID
-	comm.SiteID = site.SiteID
+	comm.SiteID = siteID
 	comm.TimeStamp = time.Now()
 	comm.ArticleID = tutil.MD5([]byte(articleKey))
 	comm.ArticleKey = articleKey
