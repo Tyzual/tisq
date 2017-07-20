@@ -39,7 +39,7 @@ Site site表对应的数据结构
 type Site struct {
 	SiteID     string
 	SiteDomain string
-	PrivateKey string
+	CreateTime time.Time
 }
 
 /*
@@ -71,7 +71,7 @@ func NewSite(domain string) *Site {
 	site := Site{}
 	site.SiteDomain = domain
 	site.SiteID = tutil.MD5([]byte(domain))
-	site.PrivateKey = tutil.RandString(16)
+	site.CreateTime = time.Now()
 	return &site
 }
 

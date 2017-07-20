@@ -24,7 +24,7 @@ const (
 	createSiteTableStmt = `CREATE TABLE IF NOT EXISTS site (
 		SiteId CHAR(32) PRIMARY KEY,
 		SiteDomain VARCHAR(64) NOT NULL,
-		PrivateKey CHAR(16) NOT NULL
+		CreateTime DATETIME NOT NULL
 	)`
 
 	createCommentTableStmt = `CREATE TABLE IF NOT EXISTS comment (
@@ -376,9 +376,6 @@ func checkSite(site *Site) bool {
 	if len(site.SiteDomain) == 0 || len(site.SiteDomain) >= 64 {
 		return false
 	}
-	if len(site.PrivateKey) != 16 {
-		return false
-	}
 	return true
 }
 
@@ -390,13 +387,13 @@ func (m *Mysql) InsertSite(site *Site) bool {
 		tutil.LogWarn(fmt.Sprintf("Site数据错误:%#v", *site))
 		return false
 	}
-	stmt, err := m.dbconn.Prepare("INSERT site SET SiteId=?, SiteDomain=?, PrivateKey=?")
+	stmt, err := m.dbconn.Prepare("INSERT site SET SiteId=?, SiteDomain=?, CreateTime=?")
 	if err != nil {
 		tutil.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
 		return false
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(site.SiteID, site.SiteDomain, site.PrivateKey)
+	_, err = stmt.Exec(site.SiteID, site.SiteDomain, site.CreateTime)
 	if err != nil {
 		tutil.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
 		return false
@@ -418,7 +415,7 @@ func (m *Mysql) GetSiteByDomain(domain string) *Site {
 	var site *Site
 	for sites.Next() {
 		site = new(Site)
-		sites.Scan(&site.SiteID, &site.SiteDomain, &site.PrivateKey)
+		sites.Scan(&site.SiteID, &site.SiteDomain, &site.CreateTime)
 		return site
 	}
 	return site

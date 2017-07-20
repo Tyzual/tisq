@@ -13,9 +13,9 @@ func TestDb(t *testing.T) {
 	user := tdb.NewUser("tyzual@gmail.com", "tyzual", "tyzual.com")
 	tdb.GlobalSQLMgr().InsertUser(user)
 
-	site := tdb.GlobalSQLMgr().GetSiteByDomain("tyzual.com")
+	site := tdb.GlobalSQLMgr().GetSiteByDomain("tyzual.moe")
 	if site == nil {
-		site = tdb.NewSite("tyzual.com")
+		site = tdb.NewSite("tyzual.moe")
 		if !tdb.GlobalSQLMgr().InsertSite(site) {
 			t.Fatal("插入site失败")
 		}
@@ -26,11 +26,11 @@ func TestDb(t *testing.T) {
 	}
 
 	tutil.LogTrace(fmt.Sprintf("%#v", site))
-	comm := tdb.NewComment(site.SiteID, "abcdefg", "echizen@foxmail.com", "tyzual content")
+	comm := tdb.NewComment(site.SiteID, "abcdefg", "tyzual@gmail.com", "tyzual content")
 	if comm != nil {
 		tdb.GlobalSQLMgr().InsertComment(comm)
+		comms, _ := tdb.GlobalSQLMgr().GetComment(comm.ArticleID, site.SiteID)
+		fmt.Println(len(comms))
 	}
 
-	comms, _ := tdb.GlobalSQLMgr().GetComment(comm.ArticleID, site.SiteID)
-	fmt.Println(len(comms))
 }
