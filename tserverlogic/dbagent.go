@@ -86,7 +86,7 @@ func insertComment(cmd *dbCmd) {
 	oResult.user[dbUser.UserID] = oUser
 	oResult.comment = append(oResult.comment, oComment)
 
-	cmd.result <- oComment
+	cmd.result <- oResult
 }
 
 func queryComment(cmd *dbCmd) {

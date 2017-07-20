@@ -16,11 +16,12 @@ func TestDb(t *testing.T) {
 	site := tdb.GlobalSQLMgr().GetSiteByDomain("tyzual.com")
 	if site == nil {
 		site = tdb.NewSite("tyzual.com")
-		tdb.GlobalSQLMgr().InsertSite(site)
+		if !tdb.GlobalSQLMgr().InsertSite(site) {
+			t.Fatal("插入site失败")
+		}
 	}
 	if site == nil {
-		tutil.LogTrace("site 为空")
-		t.Fail()
+		t.Fatal("site 为空")
 		return
 	}
 
