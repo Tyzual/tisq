@@ -17,29 +17,29 @@ type inComment struct {
 	lastCommentID *string
 }
 
-type outUser struct {
-	email       string
-	displayName *string
-	site        *string
+type OutUser struct {
+	Email       string
+	DisplayName *string
+	Site        *string
 }
 
-type outComment struct {
-	userID     string
-	content    string
-	commentID  string
-	createTime time.Time
+type OutComment struct {
+	UserID     string
+	Content    string
+	CommentID  string
+	CreateTime time.Time
 }
 
-type result struct {
+type Result struct {
 	//key:userid value:user
-	user map[string]outUser
+	User map[string]OutUser
 
-	comment []outComment
+	Comment []OutComment
 }
 
-func newResult() *result {
-	oResult := result{}
-	oResult.user = make(map[string]outUser)
-	oResult.comment = make([]outComment, 0)
+func newResult() *Result {
+	oResult := Result{}
+	oResult.User = make(map[string]OutUser)
+	oResult.Comment = make([]OutComment, 0)
 	return &oResult
 }

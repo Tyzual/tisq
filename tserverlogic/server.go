@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"encoding/json"
+
 	"github.com/tyzual/tisq/tutil"
 )
 
@@ -18,7 +20,29 @@ func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ERROR: USE POST"))
 		return
 	}
-	tutil.Log(fmt.Sprintf("%v", r.Method))
+	// TODO:Parse body
+	comment := inComment{}
+	cmd := newCmd(cmdInsertComment, &comment)
+	cmdQueue <- cmd
+	res, ok := <-cmd.result
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	outRes, ok := res.(*Result)
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	jsonData, err := json.Marshal(outRes)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		tutil.LogWarn(fmt.Sprintf("创建JSON字符串出错，原因%v", err))
+		return
+	}
+	tutil.Log(string(jsonData))
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonData)
 }
 
 /*

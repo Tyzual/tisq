@@ -1,7 +1,10 @@
 package tserverlogic
 
 import (
+	"fmt"
+
 	"github.com/tyzual/tisq/tdb"
+	"github.com/tyzual/tisq/tutil"
 )
 
 const (
@@ -40,7 +43,7 @@ func newCmd(cmd uint16, arg interface{}) *dbCmd {
 
 func insertComment(cmd *dbCmd) {
 	defer close(cmd.result)
-	comm, ok := cmd.cmdArg.(inComment)
+	comm, ok := cmd.cmdArg.(*inComment)
 	if !ok {
 		return
 	}
@@ -60,6 +63,10 @@ func insertComment(cmd *dbCmd) {
 			displayName = *comm.displayName
 		}
 		dbUser = tdb.NewUser(comm.email, displayName, webSite)
+		if !tdb.GlobalSQLMgr().InsertUser(dbUser) {
+			tutil.LogWarn(fmt.Sprintf("插入用户失败，用户数据%#v", dbUser))
+			return
+		}
 	}
 	if dbUser == nil {
 		return
@@ -73,18 +80,18 @@ func insertComment(cmd *dbCmd) {
 		return
 	}
 
-	oUser := outUser{email: dbUser.Email}
+	oUser := OutUser{Email: dbUser.Email}
 	if dbUser.DisplayName.Valid {
-		oUser.displayName = &dbUser.DisplayName.String
+		oUser.DisplayName = &dbUser.DisplayName.String
 	}
 	if dbUser.WebSite.Valid {
-		oUser.site = &dbUser.WebSite.String
+		oUser.Site = &dbUser.WebSite.String
 	}
-	oComment := outComment{userID: dbUser.UserID, content: dbComment.Content, createTime: dbComment.TimeStamp, commentID: dbComment.CommentID}
+	oComment := OutComment{UserID: dbUser.UserID, Content: dbComment.Content, CreateTime: dbComment.TimeStamp, CommentID: dbComment.CommentID}
 
 	oResult := newResult()
-	oResult.user[dbUser.UserID] = oUser
-	oResult.comment = append(oResult.comment, oComment)
+	oResult.User[dbUser.UserID] = oUser
+	oResult.Comment = append(oResult.Comment, oComment)
 
 	cmd.result <- oResult
 }
