@@ -4,7 +4,7 @@
 all: tserver
 
 tserver :
-	cd tserver; \
+	cd tserver && \
 	go build
 
 clean :
