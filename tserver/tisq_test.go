@@ -30,6 +30,6 @@ func TestDb(t *testing.T) {
 		tdb.GlobalSQLMgr().InsertComment(comm)
 	}
 
-	comms, _ := tdb.GlobalSQLMgr().GetCommentByArticleKey("abcdefg")
+	comms, _ := tdb.GlobalSQLMgr().GetComment(comm.ArticleID, site.SiteID)
 	fmt.Println(len(comms))
 }

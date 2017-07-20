@@ -309,13 +309,13 @@ func (m *Mysql) InsertComment(comm *Comment) bool {
 }
 
 /*
-GetCommentByArticleKey 通过article key来查询评论
+GetComment 通过articleID和SiteId 来查询评论
 */
-func (m *Mysql) GetCommentByArticleKey(key string) ([]Comment, []User) {
-	if len(key) == 0 {
+func (m *Mysql) GetComment(articleID, siteID string) ([]Comment, []User) {
+	if len(articleID) == 0 || len(siteID) == 0 {
 		return nil, nil
 	}
-	comments, err := m.dbconn.Query("SELECT * FROM comment WHERE ArticleKey=? AND Deleted=false", key)
+	comments, err := m.dbconn.Query("SELECT * FROM comment WHERE ArticleID =? AND SiteId=?  AND Deleted=false", articleID, siteID)
 	if err != nil {
 		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
 		return nil, nil
@@ -333,7 +333,7 @@ func (m *Mysql) GetCommentByArticleKey(key string) ([]Comment, []User) {
 		userIds = append(userIds, comm.UserID)
 	}
 	if len(comms) == 0 {
-		tutil.Log(fmt.Sprintf("没找到key为%v的评论", key))
+		tutil.Log(fmt.Sprintf("没找到(%v, %v)为的评论", articleID, siteID))
 		return nil, nil
 	}
 
