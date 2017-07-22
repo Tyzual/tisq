@@ -62,7 +62,25 @@ func insertComment(cmd *dbCmd) {
 		}
 	}
 
-	dbUser := tdb.GlobalSQLMgr().GetUserByEmail(comm.email)
+	var dbUser *tdb.User
+	if (comm.displayName != nil && len(*comm.displayName) > 0) ||
+		(comm.site != nil && len(*comm.site) > 0) {
+		displayName := ""
+		if comm.displayName != nil {
+			displayName = *comm.displayName
+		}
+		site := ""
+		if comm.site != nil {
+			site = *comm.site
+		}
+		dbUser = tdb.NewUser(comm.email, displayName, site)
+		if !tdb.GlobalSQLMgr().InsertUser(dbUser) {
+			tutil.LogWarn("插入User失败")
+		}
+	} else {
+		dbUser = tdb.GlobalSQLMgr().GetUserByEmail(comm.email)
+	}
+
 	if dbUser == nil {
 		webSite := ""
 		if comm.site != nil {
