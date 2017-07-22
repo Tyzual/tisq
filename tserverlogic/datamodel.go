@@ -1,9 +1,5 @@
 package tserverlogic
 
-import (
-	"time"
-)
-
 type inComment struct {
 	domain string
 
@@ -34,7 +30,7 @@ type OutComment struct {
 	UserID     string
 	Content    string
 	CommentID  uint32
-	CreateTime time.Time
+	CreateTime int64
 }
 
 /*

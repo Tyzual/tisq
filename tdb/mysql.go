@@ -170,14 +170,16 @@ func (m *Mysql) InsertUser(user *User) bool {
 		strBuff.WriteString(",WebSite=?")
 		args = append(args, user.WebSite.String)
 	}
-	strBuff.WriteString(" ON DUPLICATE KEY UPDATE ")
-	if user.DisplayName.Valid {
-		strBuff.WriteString("DisplayName=?")
-		args = append(args, user.DisplayName.String)
-	}
-	if user.WebSite.Valid {
-		strBuff.WriteString(",WebSite=?")
-		args = append(args, user.WebSite.String)
+	if user.DisplayName.Valid || user.WebSite.Valid {
+		strBuff.WriteString(" ON DUPLICATE KEY UPDATE ")
+		if user.DisplayName.Valid {
+			strBuff.WriteString("DisplayName=?")
+			args = append(args, user.DisplayName.String)
+		}
+		if user.WebSite.Valid {
+			strBuff.WriteString(",WebSite=?")
+			args = append(args, user.WebSite.String)
+		}
 	}
 	str := strBuff.String()
 	tutil.LogTrace(fmt.Sprintf("数据库插入语句:%v", str))

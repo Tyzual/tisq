@@ -87,7 +87,7 @@ func insertComment(cmd *dbCmd) {
 	if dbUser.WebSite.Valid {
 		oUser.Site = &dbUser.WebSite.String
 	}
-	oComment := OutComment{UserID: dbUser.UserID, Content: dbComment.Content, CreateTime: dbComment.TimeStamp, CommentID: dbComment.CommentID}
+	oComment := OutComment{UserID: dbUser.UserID, Content: dbComment.Content, CreateTime: dbComment.TimeStamp.Unix(), CommentID: dbComment.CommentID}
 
 	oResult := newResult()
 	oResult.User[dbUser.UserID] = oUser
