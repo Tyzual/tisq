@@ -10,6 +10,7 @@ import (
 
 func TestDb(t *testing.T) {
 	tutil.PrintTrace = true
+
 	user := tdb.NewUser("tyzual@gmail.com", "tyzual", "tyzual.com")
 	tdb.GlobalSQLMgr().InsertUser(user)
 
@@ -26,11 +27,15 @@ func TestDb(t *testing.T) {
 	}
 
 	tutil.LogTrace(fmt.Sprintf("%#v", site))
-	comm := tdb.NewComment(site.SiteID, "abcdefg", "tyzual@gmail.com", "tyzual content")
+	comm := tdb.NewComment(site.SiteID, "abcdefg", "tyzual@gmail.com", "tyzual content250", nil)
 	if comm != nil {
 		tdb.GlobalSQLMgr().InsertComment(comm)
+		fmt.Println("commID: ", comm.CommentID)
 		comms, _ := tdb.GlobalSQLMgr().GetComment(comm.ArticleID, site.SiteID)
 		fmt.Println(len(comms))
+		for _, comm := range comms {
+			fmt.Printf("%#v\n", comm)
+		}
 	}
 
 }

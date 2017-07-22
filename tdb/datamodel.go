@@ -13,13 +13,14 @@ import (
 Comment comment表对应的数据结构
 */
 type Comment struct {
-	CommentID  string
+	CommentID  uint32
 	ArticleID  string
 	ArticleKey string
 	UserID     string
 	SiteID     string
 	Content    string
 	TimeStamp  time.Time
+	ReplyID    sql.NullInt64
 	Deleted    bool
 }
 
@@ -78,7 +79,7 @@ func NewSite(domain string) *Site {
 /*
 NewComment 创建一个新评论的数据结构
 */
-func NewComment(siteID, articleKey, userEmail, content string) *Comment {
+func NewComment(siteID, articleKey, userEmail, content string, replyID *uint32) *Comment {
 	m := GlobalSQLMgr()
 	user := m.GetUserByEmail(userEmail)
 	if user == nil {
@@ -87,6 +88,9 @@ func NewComment(siteID, articleKey, userEmail, content string) *Comment {
 	}
 
 	comm := Comment{}
+	if replyID != nil {
+		comm.ReplyID = sql.NullInt64{Valid: true, Int64: int64(*replyID)}
+	}
 	comm.UserID = user.UserID
 	comm.SiteID = siteID
 	comm.TimeStamp = time.Now()

@@ -29,7 +29,7 @@ func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	outRes, ok := res.(*Result)
+	outRes, ok := res.(*AddCommentResult)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

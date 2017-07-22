@@ -72,7 +72,7 @@ func insertComment(cmd *dbCmd) {
 		return
 	}
 
-	dbComment := tdb.NewComment(dbSite.SiteID, comm.articleKey, dbUser.Email, comm.content)
+	dbComment := tdb.NewComment(dbSite.SiteID, comm.articleKey, dbUser.Email, comm.content, comm.replyID)
 	if dbComment == nil {
 		return
 	}

@@ -35,12 +35,16 @@ const (
 		SiteId CHAR(32) NOT NULL,
 		Content VARCHAR(512) NOT NULL,
 		TimeStamp DATETIME NOT NULL,
+		ReplyID INT UNSIGNED NULL,
 		Deleted BOOL DEFAULT false,
 			FOREIGN KEY (UserId)
 			REFERENCES user(UserId)
 			ON DELETE CASCADE,
 			FOREIGN KEY (SiteId)
 			REFERENCES site(SiteId)
+			ON DELETE CASCADE,
+			FOREIGN KEY (ReplyID)
+			REFERENCES comment(CommentID)
 			ON DELETE CASCADE
 	)
 	`
@@ -60,7 +64,7 @@ func init() {
 }
 
 /*
-GlobalSqlMgr 全局数据库对象
+GlobalSQLMgr 全局数据库对象
 */
 func GlobalSQLMgr() *Mysql {
 	return &gMysql
@@ -276,9 +280,16 @@ func (m *Mysql) InsertComment(comm *Comment) bool {
 		return false
 	}
 
-	var args = make([]interface{}, 0, 4)
-	str := "INSERT comment SET ArticleId=?, ArticleKey=?, UserId=?,Content=?,TimeStamp=?,SiteId=?"
-	args = append(args, comm.ArticleID, comm.ArticleKey, comm.UserID, comm.Content, comm.TimeStamp, comm.SiteID)
+	var args = make([]interface{}, 0, 7)
+	var strBuff bytes.Buffer
+	strBuff.WriteString("INSERT comment SET ArticleId=?, ArticleKey=?, UserId=?,Content=?,TimeStamp=?,SiteId=?")
+	args = append(args, comm.ArticleID, comm.ArticleKey, comm.UserID, comm.Content, tutil.TimeToDateTimeString(&comm.TimeStamp), comm.SiteID)
+	if comm.ReplyID.Valid {
+		strBuff.WriteString(",ReplyID=?")
+		args = append(args, uint32(comm.ReplyID.Int64))
+	}
+
+	str := strBuff.String()
 	tutil.LogTrace(fmt.Sprintf("数据库插入语句:%v", str))
 	tutil.LogTrace(fmt.Sprintf("参数:%v", args))
 
@@ -288,22 +299,15 @@ func (m *Mysql) InsertComment(comm *Comment) bool {
 		return false
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(args...)
+	result, err := stmt.Exec(args...)
 	if err != nil {
 		tutil.LogWarn(fmt.Sprintf("插入数据库失败，原因:%v", err))
 		return false
 	}
 	tutil.LogTrace("插入数据库成功")
-
-	rows, err := m.dbconn.Query("SELECT CommentID FROM comment WHERE ArticleId=? AND ArticleKey=? AND UserId=? AND Content=? AND TimeStamp=? AND SiteId=?", comm.ArticleID, comm.ArticleKey, comm.UserID, comm.Content, comm.TimeStamp, comm.SiteID)
-	if err != nil {
-		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
-		return false
-	}
-	defer rows.Close()
-	for rows.Next() {
-		rows.Scan(&comm.CommentID)
-	}
+	lastInsertID, _ := result.LastInsertId()
+	tutil.LogTrace(fmt.Sprintf("last inserted id: %v", lastInsertID))
+	comm.CommentID = uint32(lastInsertID)
 
 	return true
 }
@@ -325,7 +329,7 @@ func (m *Mysql) GetComment(articleID, siteID string) ([]Comment, []User) {
 	userIds := make([]interface{}, 0) // []string
 	for comments.Next() {
 		comm := Comment{}
-		if err := comments.Scan(&comm.CommentID, &comm.ArticleID, &comm.ArticleKey, &comm.UserID, &comm.SiteID, &comm.Content, &comm.TimeStamp, &comm.Deleted); err != nil {
+		if err := comments.Scan(&comm.CommentID, &comm.ArticleID, &comm.ArticleKey, &comm.UserID, &comm.SiteID, &comm.Content, &comm.TimeStamp, &comm.ReplyID, &comm.Deleted); err != nil {
 			tutil.LogTrace(fmt.Sprintf("解析Comment数据结构错误，原因:%v", err))
 			return nil, nil
 		}
