@@ -113,9 +113,10 @@ func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 	if ok && len(replyIDs) != 0 {
 		replyID64, err := strconv.ParseUint(replyIDs[0], 10, 32)
 		if err != nil {
-			replyID32 := uint32(replyID64)
-			comment.replyID = &replyID32
+			tutil.LogWarn("解析replyID错误")
 		}
+		replyID32 := uint32(replyID64)
+		comment.replyID = &replyID32
 	}
 
 	lastCommentIDs, ok := r.Form[keyLastCommentID]

@@ -27,10 +27,11 @@ type OutUser struct {
 OutComment 服务器返回给客户端的Comment数据结构
 */
 type OutComment struct {
-	UserID     string
-	Content    string
-	CommentID  uint32
-	CreateTime int64
+	UserID         string
+	Content        string
+	CommentID      uint32
+	CreateTime     int64
+	ReplyCommentID *uint32
 }
 
 /*

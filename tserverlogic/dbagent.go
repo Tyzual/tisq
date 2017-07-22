@@ -76,6 +76,7 @@ func insertComment(cmd *dbCmd) {
 		dbUser = tdb.NewUser(comm.email, displayName, site)
 		if !tdb.GlobalSQLMgr().InsertUser(dbUser) {
 			tutil.LogWarn("插入User失败")
+			dbUser = nil
 		}
 	} else {
 		dbUser = tdb.GlobalSQLMgr().GetUserByEmail(comm.email)
@@ -116,6 +117,10 @@ func insertComment(cmd *dbCmd) {
 		oUser.Site = &dbUser.WebSite.String
 	}
 	oComment := OutComment{UserID: dbUser.UserID, Content: dbComment.Content, CreateTime: dbComment.TimeStamp.Unix(), CommentID: dbComment.CommentID}
+	if dbComment.ReplyID.Valid {
+		replyID := uint32(dbComment.ReplyID.Int64)
+		oComment.ReplyCommentID = &replyID
+	}
 
 	oResult := newResult()
 	oResult.User[dbUser.UserID] = oUser
