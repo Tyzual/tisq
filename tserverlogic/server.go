@@ -53,7 +53,6 @@ func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ERROR: USE POST"))
 		return
 	}
-	// TODO:Parse body
 	err := r.ParseForm()
 	if err != nil {
 		tutil.LogWarn("addComment 处理请求错误")

@@ -3,6 +3,7 @@ package tserverlogic
 import (
 	"fmt"
 
+	"github.com/tyzual/tisq/tconf"
 	"github.com/tyzual/tisq/tdb"
 	"github.com/tyzual/tisq/tutil"
 )
@@ -47,9 +48,18 @@ func insertComment(cmd *dbCmd) {
 	if !ok {
 		return
 	}
+	if !tconf.GlobalConf().IsSiteRegistered(comm.domain) {
+		return
+	}
 	dbSite := tdb.GlobalSQLMgr().GetSiteByDomain(comm.domain)
 	if dbSite == nil {
-		return
+		dbSite = tdb.NewSite(comm.domain)
+		if dbSite == nil {
+			return
+		}
+		if !tdb.GlobalSQLMgr().InsertSite(dbSite) {
+			return
+		}
 	}
 
 	dbUser := tdb.GlobalSQLMgr().GetUserByEmail(comm.email)
