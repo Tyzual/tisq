@@ -19,8 +19,8 @@ OutUser 服务器返回给客户端的User数据囧GB
 */
 type OutUser struct {
 	Email       string
-	DisplayName *string
-	Site        *string
+	DisplayName *string `json:",omitempty"`
+	Site        *string `json:",omitempty"`
 }
 
 /*
@@ -31,7 +31,7 @@ type OutComment struct {
 	Content        string
 	CommentID      uint32
 	CreateTime     int64
-	ReplyCommentID *uint32
+	ReplyCommentID *uint32 `json:",omitempty"`
 }
 
 /*
