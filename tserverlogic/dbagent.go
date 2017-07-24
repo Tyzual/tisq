@@ -1,6 +1,8 @@
 package tserverlogic
 
 import (
+	"sync"
+
 	"github.com/tyzual/tisq/tdb"
 )
 
@@ -10,6 +12,7 @@ const (
 )
 
 var cmdQueue = make(chan *dbCmd)
+var rwLock = sync.RWMutex{}
 
 type dbCmd struct {
 	cmd    uint16
@@ -23,11 +26,11 @@ func init() {
 			switch cmd.cmd {
 			case cmdInsertComment:
 				{
-					insertComment(cmd)
+					go insertComment(cmd)
 				}
 			case cmdQueryComment:
 				{
-					queryComment(cmd)
+					go queryComment(cmd)
 				}
 			}
 		}
@@ -39,6 +42,8 @@ func newCmd(cmd uint16, arg interface{}) *dbCmd {
 }
 
 func insertComment(cmd *dbCmd) {
+	rwLock.Lock()
+	defer rwLock.Unlock()
 	defer close(cmd.result)
 	comm, ok := cmd.cmdArg.(inComment)
 	if !ok {
@@ -90,4 +95,6 @@ func insertComment(cmd *dbCmd) {
 }
 
 func queryComment(cmd *dbCmd) {
+	rwLock.RLock()
+	defer rwLock.RUnlock()
 }
