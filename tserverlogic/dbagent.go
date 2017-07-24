@@ -1,9 +1,12 @@
 package tserverlogic
 
 import (
+	"fmt"
 	"sync"
 
+	"github.com/tyzual/tisq/tconf"
 	"github.com/tyzual/tisq/tdb"
+	"github.com/tyzual/tisq/tutil"
 )
 
 const (
@@ -45,16 +48,44 @@ func insertComment(cmd *dbCmd) {
 	rwLock.Lock()
 	defer rwLock.Unlock()
 	defer close(cmd.result)
-	comm, ok := cmd.cmdArg.(inComment)
+	comm, ok := cmd.cmdArg.(*inComment)
 	if !ok {
+		return
+	}
+	if !tconf.GlobalConf().IsSiteRegistered(comm.domain) {
 		return
 	}
 	dbSite := tdb.GlobalSQLMgr().GetSiteByDomain(comm.domain)
 	if dbSite == nil {
-		return
+		dbSite = tdb.NewSite(comm.domain)
+		if dbSite == nil {
+			return
+		}
+		if !tdb.GlobalSQLMgr().InsertSite(dbSite) {
+			return
+		}
 	}
 
-	dbUser := tdb.GlobalSQLMgr().GetUserByEmail(comm.email)
+	var dbUser *tdb.User
+	if (comm.displayName != nil && len(*comm.displayName) > 0) ||
+		(comm.site != nil && len(*comm.site) > 0) {
+		displayName := ""
+		if comm.displayName != nil {
+			displayName = *comm.displayName
+		}
+		site := ""
+		if comm.site != nil {
+			site = *comm.site
+		}
+		dbUser = tdb.NewUser(comm.email, displayName, site)
+		if !tdb.GlobalSQLMgr().InsertUser(dbUser) {
+			tutil.LogWarn("插入User失败")
+			dbUser = nil
+		}
+	} else {
+		dbUser = tdb.GlobalSQLMgr().GetUserByEmail(comm.email)
+	}
+
 	if dbUser == nil {
 		webSite := ""
 		if comm.site != nil {
@@ -65,12 +96,16 @@ func insertComment(cmd *dbCmd) {
 			displayName = *comm.displayName
 		}
 		dbUser = tdb.NewUser(comm.email, displayName, webSite)
+		if !tdb.GlobalSQLMgr().InsertUser(dbUser) {
+			tutil.LogWarn(fmt.Sprintf("插入用户失败，用户数据%#v", dbUser))
+			return
+		}
 	}
 	if dbUser == nil {
 		return
 	}
 
-	dbComment := tdb.NewComment(dbSite.SiteID, comm.articleKey, dbUser.Email, comm.content)
+	dbComment := tdb.NewComment(dbSite.SiteID, comm.articleKey, dbUser.Email, comm.content, comm.replyID)
 	if dbComment == nil {
 		return
 	}
@@ -78,18 +113,22 @@ func insertComment(cmd *dbCmd) {
 		return
 	}
 
-	oUser := outUser{email: dbUser.Email}
+	oUser := OutUser{Email: dbUser.Email}
 	if dbUser.DisplayName.Valid {
-		oUser.displayName = &dbUser.DisplayName.String
+		oUser.DisplayName = &dbUser.DisplayName.String
 	}
 	if dbUser.WebSite.Valid {
-		oUser.site = &dbUser.WebSite.String
+		oUser.Site = &dbUser.WebSite.String
 	}
-	oComment := outComment{userID: dbUser.UserID, content: dbComment.Content, createTime: dbComment.TimeStamp, commentID: dbComment.CommentID}
+	oComment := OutComment{UserID: dbUser.UserID, Content: dbComment.Content, CreateTime: dbComment.TimeStamp.Unix(), CommentID: dbComment.CommentID}
+	if dbComment.ReplyID.Valid {
+		replyID := uint32(dbComment.ReplyID.Int64)
+		oComment.ReplyCommentID = &replyID
+	}
 
 	oResult := newResult()
-	oResult.user[dbUser.UserID] = oUser
-	oResult.comment = append(oResult.comment, oComment)
+	oResult.User[dbUser.UserID] = oUser
+	oResult.Comment = append(oResult.Comment, oComment)
 
 	cmd.result <- oResult
 }

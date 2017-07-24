@@ -26,7 +26,11 @@ const confFile = "/etc/tisq.cnf"
 	"Host": "localhost",
 	"Port": 3306,
 	"DbName": "TISQ"
-}
+},
+"Site": [
+		"tyzual.moe",
+		"tyzual.com"
+	]
 }
 */
 
@@ -34,8 +38,10 @@ const confFile = "/etc/tisq.cnf"
 TConf 服务器的全局配置
 */
 type TConf struct {
-	Server ServerConf
-	Mysql  MysqlConf
+	Server   ServerConf
+	Mysql    MysqlConf
+	Site     []string
+	siteDict map[string]struct{}
 }
 
 /*
@@ -65,6 +71,7 @@ func GlobalConf() *TConf {
 }
 
 func init() {
+	gConf.siteDict = make(map[string]struct{})
 	if _, err := os.Stat(confFile); os.IsNotExist(err) {
 		gConf.Server.Port = 34958
 		gConf.Server.Domain = "localhost"
@@ -73,6 +80,7 @@ func init() {
 		gConf.Mysql.Password = ""
 		gConf.Mysql.Port = 3306
 		gConf.Mysql.User = "root"
+		gConf.Site = make([]string, 0)
 		jsonByte, err := json.MarshalIndent(gConf, "", "\t")
 		if err != nil {
 			tutil.LogWarn(fmt.Sprintf("创建配置文件出错\n错误原因:%v", err))
@@ -91,7 +99,17 @@ func init() {
 			} else {
 				tutil.Log(fmt.Sprintf("域名:%v", gConf.Server.Domain))
 				tutil.Log(fmt.Sprintf("端口:%v", gConf.Server.Port))
+				tutil.Log("管理的博客域名:")
+				for _, domain := range gConf.Site {
+					tutil.Log(domain)
+					gConf.siteDict[domain] = struct{}{}
+				}
 			}
 		}
 	}
+}
+
+func (cfg *TConf) IsSiteRegistered(site string) bool {
+	_, ok := cfg.siteDict[site]
+	return ok
 }

@@ -1,9 +1,5 @@
 package tserverlogic
 
-import (
-	"time"
-)
-
 type inComment struct {
 	domain string
 
@@ -13,33 +9,44 @@ type inComment struct {
 
 	articleKey string
 	content    string
+	replyID    *uint32
 
 	lastCommentID *string
 }
 
-type outUser struct {
-	email       string
-	displayName *string
-	site        *string
+/*
+OutUser 服务器返回给客户端的User数据囧GB
+*/
+type OutUser struct {
+	Email       string
+	DisplayName *string `json:",omitempty"`
+	Site        *string `json:",omitempty"`
 }
 
-type outComment struct {
-	userID     string
-	content    string
-	commentID  string
-	createTime time.Time
+/*
+OutComment 服务器返回给客户端的Comment数据结构
+*/
+type OutComment struct {
+	UserID         string
+	Content        string
+	CommentID      uint32
+	CreateTime     int64
+	ReplyCommentID *uint32 `json:",omitempty"`
 }
 
-type result struct {
+/*
+AddCommentResult 服务器返回给客户端的结果数据
+*/
+type AddCommentResult struct {
 	//key:userid value:user
-	user map[string]outUser
+	User map[string]OutUser
 
-	comment []outComment
+	Comment []OutComment
 }
 
-func newResult() *result {
-	oResult := result{}
-	oResult.user = make(map[string]outUser)
-	oResult.comment = make([]outComment, 0)
+func newResult() *AddCommentResult {
+	oResult := AddCommentResult{}
+	oResult.User = make(map[string]OutUser)
+	oResult.Comment = make([]OutComment, 0)
 	return &oResult
 }
