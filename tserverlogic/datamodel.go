@@ -18,7 +18,15 @@ type inComment struct {
 }
 
 /*
-OutUser 服务器返回给客户端的User数据囧GB
+OutErr 服务器返回给客户端的错误信息
+*/
+type OutErr struct {
+	ErrorNum uint32
+	ErrorMsg string
+}
+
+/*
+OutUser 服务器返回给客户端的User数据
 */
 type OutUser struct {
 	Email       string
@@ -52,4 +60,8 @@ func newResult() *CommentResult {
 	oResult.User = make(map[string]OutUser)
 	oResult.Comment = make([]OutComment, 0)
 	return &oResult
+}
+
+func newErr(num uint32, msg string) *OutErr {
+	return &OutErr{ErrorNum: num, ErrorMsg: msg}
 }

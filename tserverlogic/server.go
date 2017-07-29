@@ -20,6 +20,12 @@ const (
 	keyLastCommentID = "lastcommentid"
 )
 
+const (
+	errMethod = 1000 + iota
+	errArg
+	errInternal
+)
+
 /*
 HandleAddComment 添加评论Handler
 请求地址：
@@ -48,14 +54,16 @@ func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		tutil.Log(fmt.Sprintf("request from:%v", r.Host))
-		w.Write([]byte("ERROR: USE POST"))
+		errStr, _ := json.Marshal(newErr(errMethod, fmt.Sprintf("http method %v is not allowed", r.Method)))
+		w.Write(errStr)
 		return
 	}
 	err := r.ParseForm()
 	if err != nil {
 		tutil.LogWarn(fmt.Sprintf("%v处理请求错误", r.URL.String()))
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("parse args error"))
+		errStr, _ := json.Marshal(newErr(errArg, "parse form error"))
+		w.Write(errStr)
 		return
 	}
 	comment := inComment{}
@@ -63,7 +71,8 @@ func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 	if !ok || len(domains) == 0 || len(domains[0]) == 0 {
 		tutil.LogWarn(fmt.Sprintf("%vdomain错误", r.URL.String()))
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("parse domain error"))
+		errStr, _ := json.Marshal(newErr(errArg, "parse arg domain error"))
+		w.Write(errStr)
 		return
 	}
 	comment.domain = domains[0]
@@ -72,7 +81,8 @@ func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 	if !ok || len(emails) == 0 || len(emails[0]) == 0 {
 		tutil.LogWarn("addComment email错误")
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("parse email error"))
+		errStr, _ := json.Marshal(newErr(errArg, "parse arg email error"))
+		w.Write(errStr)
 		return
 	}
 	comment.email = emails[0]
@@ -93,7 +103,8 @@ func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 	if !ok || len(articleKeys) == 0 || len(articleKeys[0]) == 0 {
 		tutil.LogWarn("addComment articlekey错误")
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("parse articlekey error"))
+		errStr, _ := json.Marshal(newErr(errArg, "parse arg articlekey error"))
+		w.Write(errStr)
 		return
 	}
 	comment.articleKey = articleKeys[0]
@@ -102,7 +113,8 @@ func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 	if !ok || len(contents) == 0 || len(contents[0]) == 0 {
 		tutil.LogWarn("addComment content错误")
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("parse content error"))
+		errStr, _ := json.Marshal(newErr(errArg, "parse arg content error"))
+		w.Write(errStr)
 		return
 	}
 	comment.content = contents[0]
@@ -128,17 +140,23 @@ func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 	res, ok := <-cmd.result
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
+		errStr, _ := json.Marshal(newErr(errInternal, "server logic error"))
+		w.Write(errStr)
 		return
 	}
 	outRes, ok := res.(*CommentResult)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
+		errStr, _ := json.Marshal(newErr(errInternal, "server logic error"))
+		w.Write(errStr)
 		return
 	}
 	jsonData, err := json.Marshal(outRes)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tutil.LogWarn(fmt.Sprintf("创建JSON字符串出错，原因%v", err))
+		errStr, _ := json.Marshal(newErr(errInternal, "server logic error"))
+		w.Write(errStr)
 		return
 	}
 	tutil.Log(string(jsonData))
@@ -165,14 +183,16 @@ func HandleCommentList(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte("ERROR: USE POST"))
+		errStr, _ := json.Marshal(newErr(errMethod, fmt.Sprintf("http method %v is not allowed", r.Method)))
+		w.Write(errStr)
 		return
 	}
 	err := r.ParseForm()
 	if err != nil {
 		tutil.LogWarn(fmt.Sprintf("%v处理请求错误", r.URL.String()))
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("parse args error"))
+		errStr, _ := json.Marshal(newErr(errArg, "parse form error"))
+		w.Write(errStr)
 		return
 	}
 
@@ -182,7 +202,8 @@ func HandleCommentList(w http.ResponseWriter, r *http.Request) {
 	if !ok || len(domains) == 0 || len(domains[0]) == 0 {
 		tutil.LogWarn(fmt.Sprintf("%vdomain错误", r.URL.String()))
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("parse domain error"))
+		errStr, _ := json.Marshal(newErr(errArg, "parse domain error"))
+		w.Write(errStr)
 		return
 	}
 	queryComment.domain = domains[0]
@@ -191,7 +212,8 @@ func HandleCommentList(w http.ResponseWriter, r *http.Request) {
 	if !ok || len(articleKeys) == 0 || len(articleKeys[0]) == 0 {
 		tutil.LogWarn(fmt.Sprintf("%varticlekey错误", r.URL.String()))
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("parse articlekey error"))
+		errStr, _ := json.Marshal(newErr(errArg, "parse articlekey error"))
+		w.Write(errStr)
 		return
 	}
 	queryComment.articleKey = articleKeys[0]
@@ -207,17 +229,23 @@ func HandleCommentList(w http.ResponseWriter, r *http.Request) {
 	res, ok := <-cmd.result
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
+		errStr, _ := json.Marshal(newErr(errInternal, "server logic error"))
+		w.Write(errStr)
 		return
 	}
 	outRes, ok := res.(*CommentResult)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
+		errStr, _ := json.Marshal(newErr(errInternal, "server logic error"))
+		w.Write(errStr)
 		return
 	}
 	jsonData, err := json.Marshal(outRes)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		tutil.LogWarn(fmt.Sprintf("创建JSON字符串出错，原因%v", err))
+		errStr, _ := json.Marshal(newErr(errInternal, "server logic error"))
+		w.Write(errStr)
 		return
 	}
 	tutil.Log(string(jsonData))

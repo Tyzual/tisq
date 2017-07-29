@@ -10,8 +10,6 @@ import (
 )
 
 func main() {
-	tutil.PrintTrace = true
-
 	http.HandleFunc("/addComment", tserverlogic.HandleAddComment)
 	http.HandleFunc("/commentList", tserverlogic.HandleCommentList)
 	tutil.LogFatal(fmt.Sprintf("%v", http.ListenAndServe(fmt.Sprintf("%v:%d", tconf.GlobalConf().Server.Domain, tconf.GlobalConf().Server.Port), nil)))
