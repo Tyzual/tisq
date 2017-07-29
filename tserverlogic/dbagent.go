@@ -166,7 +166,7 @@ func dbResultToServerResult(comments []tdb.Comment, users []tdb.User) *CommentRe
 			oUser.DisplayName = &user.DisplayName.String
 		}
 		if user.WebSite.Valid {
-			oUser.DisplayName = &user.WebSite.String
+			oUser.Site = &user.WebSite.String
 		}
 		oResult.User[user.UserID] = oUser
 	}

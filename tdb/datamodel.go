@@ -72,7 +72,7 @@ func NewSite(domain string) *Site {
 	site := Site{}
 	site.SiteDomain = domain
 	site.SiteID = SiteDomainToID(domain)
-	site.CreateTime = time.Now()
+	site.CreateTime = time.Now().UTC()
 	return &site
 }
 
@@ -93,7 +93,7 @@ func NewComment(siteID, articleKey, userEmail, content string, replyID *uint32) 
 	}
 	comm.UserID = user.UserID
 	comm.SiteID = siteID
-	comm.TimeStamp = time.Now()
+	comm.TimeStamp = time.Now().UTC()
 	comm.ArticleID = ArticleKeyToID(articleKey)
 	comm.ArticleKey = articleKey
 	comm.Content = content

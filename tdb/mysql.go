@@ -330,9 +330,10 @@ func (m *Mysql) GetComment(articleID, siteID string, lastCommentID *string) ([]C
 		strBuffer.WriteString(" AND CommentID>?")
 		args = append(args, *lastCommentID)
 	}
+	strBuffer.WriteString(" ORDER BY TimeStamp DESC")
 	queryString := strBuffer.String()
-	tutil.Log(fmt.Sprintf("数据库查询字符串：%v", queryString))
-	tutil.Log(fmt.Sprintf("参数：%v", args))
+	tutil.LogTrace(fmt.Sprintf("数据库查询字符串：%v", queryString))
+	tutil.LogTrace(fmt.Sprintf("参数：%v", args))
 	comments, err := m.dbconn.Query(queryString, args...)
 	if err != nil {
 		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
