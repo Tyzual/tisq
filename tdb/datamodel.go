@@ -71,7 +71,7 @@ func NewSite(domain string) *Site {
 	}
 	site := Site{}
 	site.SiteDomain = domain
-	site.SiteID = tutil.MD5([]byte(domain))
+	site.SiteID = SiteDomainToID(domain)
 	site.CreateTime = time.Now()
 	return &site
 }
@@ -94,9 +94,23 @@ func NewComment(siteID, articleKey, userEmail, content string, replyID *uint32) 
 	comm.UserID = user.UserID
 	comm.SiteID = siteID
 	comm.TimeStamp = time.Now()
-	comm.ArticleID = tutil.MD5([]byte(articleKey))
+	comm.ArticleID = ArticleKeyToID(articleKey)
 	comm.ArticleKey = articleKey
 	comm.Content = content
 	comm.Deleted = false
 	return &comm
+}
+
+/*
+ArticleKeyToID 把articleKey转换为articlID
+*/
+func ArticleKeyToID(key string) string {
+	return tutil.MD5([]byte(key))
+}
+
+/*
+SiteDomainToID 把site domain转换为siteID
+*/
+func SiteDomainToID(domain string) string {
+	return tutil.MD5([]byte(domain))
 }

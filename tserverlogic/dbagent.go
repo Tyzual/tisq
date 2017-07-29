@@ -118,30 +118,7 @@ func insertComment(cmd *dbCmd) {
 	if comm.lastCommentID != nil &&
 		len(*comm.lastCommentID) != 0 {
 		comments, users := tdb.GlobalSQLMgr().GetComment(dbComment.ArticleID, dbSite.SiteID, comm.lastCommentID)
-		oResult := newResult()
-		for _, user := range users {
-			oUser := OutUser{Email: user.Email}
-			if user.DisplayName.Valid {
-				oUser.DisplayName = &user.DisplayName.String
-			}
-			if user.WebSite.Valid {
-				oUser.DisplayName = &user.WebSite.String
-			}
-			oResult.User[user.UserID] = oUser
-		}
-
-		for _, comment := range comments {
-			oComment := OutComment{UserID: comment.UserID,
-				Content:    comment.Content,
-				CommentID:  comment.CommentID,
-				CreateTime: comment.TimeStamp.Unix()}
-
-			if comment.ReplyID.Valid {
-				replyID := uint32(comment.ReplyID.Int64)
-				oComment.ReplyCommentID = &replyID
-			}
-			oResult.Comment = append(oResult.Comment, oComment)
-		}
+		oResult := dbResultToServerResult(comments, users)
 		cmd.result <- oResult
 	} else {
 		oUser := OutUser{Email: dbUser.Email}
@@ -168,4 +145,43 @@ func insertComment(cmd *dbCmd) {
 func queryComment(cmd *dbCmd) {
 	rwLock.RLock()
 	defer rwLock.RUnlock()
+	defer close(cmd.result)
+
+	comm, ok := cmd.cmdArg.(*inQueryComment)
+	if !ok {
+		return
+	}
+	articleID := tdb.ArticleKeyToID(comm.articleKey)
+	siteID := tdb.SiteDomainToID(comm.domain)
+	comments, users := tdb.GlobalSQLMgr().GetComment(articleID, siteID, comm.lastCommentID)
+	oResult := dbResultToServerResult(comments, users)
+	cmd.result <- oResult
+}
+
+func dbResultToServerResult(comments []tdb.Comment, users []tdb.User) *CommentResult {
+	oResult := newResult()
+	for _, user := range users {
+		oUser := OutUser{Email: user.Email}
+		if user.DisplayName.Valid {
+			oUser.DisplayName = &user.DisplayName.String
+		}
+		if user.WebSite.Valid {
+			oUser.DisplayName = &user.WebSite.String
+		}
+		oResult.User[user.UserID] = oUser
+	}
+
+	for _, comment := range comments {
+		oComment := OutComment{UserID: comment.UserID,
+			Content:    comment.Content,
+			CommentID:  comment.CommentID,
+			CreateTime: comment.TimeStamp.Unix()}
+
+		if comment.ReplyID.Valid {
+			replyID := uint32(comment.ReplyID.Int64)
+			oComment.ReplyCommentID = &replyID
+		}
+		oResult.Comment = append(oResult.Comment, oComment)
+	}
+	return oResult
 }

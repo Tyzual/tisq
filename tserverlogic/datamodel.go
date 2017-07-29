@@ -1,17 +1,20 @@
 package tserverlogic
 
+type inQueryComment struct {
+	domain        string
+	articleKey    string
+	lastCommentID *string
+}
+
 type inComment struct {
-	domain string
+	inQueryComment
 
 	email       string
 	displayName *string
 	site        *string
 
-	articleKey string
-	content    string
-	replyID    *uint32
-
-	lastCommentID *string
+	content string
+	replyID *uint32
 }
 
 /*
@@ -35,17 +38,17 @@ type OutComment struct {
 }
 
 /*
-AddCommentResult 服务器返回给客户端的结果数据
+CommentResult 服务器返回给客户端的结果数据
 */
-type AddCommentResult struct {
+type CommentResult struct {
 	//key:userid value:user
 	User map[string]OutUser
 
 	Comment []OutComment
 }
 
-func newResult() *AddCommentResult {
-	oResult := AddCommentResult{}
+func newResult() *CommentResult {
+	oResult := CommentResult{}
 	oResult.User = make(map[string]OutUser)
 	oResult.Comment = make([]OutComment, 0)
 	return &oResult
