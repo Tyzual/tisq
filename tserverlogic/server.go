@@ -1,11 +1,9 @@
 package tserverlogic
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"encoding/json"
-
 	"strconv"
 
 	"github.com/tyzual/tisq/tutil"

@@ -63,6 +63,7 @@ func insertComment(cmd *dbCmd) {
 	}
 
 	var dbUser *tdb.User
+	// 当传入了displayname 和 site 时需要更新数据库
 	if (comm.displayName != nil && len(*comm.displayName) > 0) ||
 		(comm.site != nil && len(*comm.site) > 0) {
 		displayName := ""
@@ -109,24 +110,55 @@ func insertComment(cmd *dbCmd) {
 		return
 	}
 
-	oUser := OutUser{Email: dbUser.Email}
-	if dbUser.DisplayName.Valid {
-		oUser.DisplayName = &dbUser.DisplayName.String
-	}
-	if dbUser.WebSite.Valid {
-		oUser.Site = &dbUser.WebSite.String
-	}
-	oComment := OutComment{UserID: dbUser.UserID, Content: dbComment.Content, CreateTime: dbComment.TimeStamp.Unix(), CommentID: dbComment.CommentID}
-	if dbComment.ReplyID.Valid {
-		replyID := uint32(dbComment.ReplyID.Int64)
-		oComment.ReplyCommentID = &replyID
-	}
+	// 传入了lastCommentID，获取lastCommentID之后的comment
+	if comm.lastCommentID != nil &&
+		len(*comm.lastCommentID) != 0 {
+		comments, users := tdb.GlobalSQLMgr().GetComment(dbComment.ArticleID, dbSite.SiteID, comm.lastCommentID)
+		oResult := newResult()
+		for _, user := range users {
+			oUser := OutUser{Email: user.Email}
+			if user.DisplayName.Valid {
+				oUser.DisplayName = &user.DisplayName.String
+			}
+			if user.WebSite.Valid {
+				oUser.DisplayName = &user.WebSite.String
+			}
+			oResult.User[user.UserID] = oUser
+		}
 
-	oResult := newResult()
-	oResult.User[dbUser.UserID] = oUser
-	oResult.Comment = append(oResult.Comment, oComment)
+		for _, comment := range comments {
+			oComment := OutComment{UserID: comment.UserID,
+				Content:    comment.Content,
+				CommentID:  comment.CommentID,
+				CreateTime: comment.TimeStamp.Unix()}
 
-	cmd.result <- oResult
+			if comment.ReplyID.Valid {
+				replyID := uint32(comment.ReplyID.Int64)
+				oComment.ReplyCommentID = &replyID
+			}
+			oResult.Comment = append(oResult.Comment, oComment)
+		}
+		cmd.result <- oResult
+	} else {
+		oUser := OutUser{Email: dbUser.Email}
+		if dbUser.DisplayName.Valid {
+			oUser.DisplayName = &dbUser.DisplayName.String
+		}
+		if dbUser.WebSite.Valid {
+			oUser.Site = &dbUser.WebSite.String
+		}
+		oComment := OutComment{UserID: dbUser.UserID, Content: dbComment.Content, CreateTime: dbComment.TimeStamp.Unix(), CommentID: dbComment.CommentID}
+		if dbComment.ReplyID.Valid {
+			replyID := uint32(dbComment.ReplyID.Int64)
+			oComment.ReplyCommentID = &replyID
+		}
+
+		oResult := newResult()
+		oResult.User[dbUser.UserID] = oUser
+		oResult.Comment = append(oResult.Comment, oComment)
+
+		cmd.result <- oResult
+	}
 }
 
 func queryComment(cmd *dbCmd) {

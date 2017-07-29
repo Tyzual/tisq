@@ -31,7 +31,7 @@ func TestDb(t *testing.T) {
 	if comm != nil {
 		tdb.GlobalSQLMgr().InsertComment(comm)
 		fmt.Println("commID: ", comm.CommentID)
-		comms, _ := tdb.GlobalSQLMgr().GetComment(comm.ArticleID, site.SiteID)
+		comms, _ := tdb.GlobalSQLMgr().GetComment(comm.ArticleID, site.SiteID, nil)
 		fmt.Println(len(comms))
 		for _, comm := range comms {
 			fmt.Printf("%#v\n", comm)

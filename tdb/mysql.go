@@ -315,13 +315,25 @@ func (m *Mysql) InsertComment(comm *Comment) bool {
 }
 
 /*
-GetComment 通过articleID和SiteId 来查询评论
+GetComment 通过articleID和SiteId来查询评论
+如果传入了lastCommentID 则返回 lastCommentID 以后的评论
 */
-func (m *Mysql) GetComment(articleID, siteID string) ([]Comment, []User) {
+func (m *Mysql) GetComment(articleID, siteID string, lastCommentID *string) ([]Comment, []User) {
 	if len(articleID) == 0 || len(siteID) == 0 {
 		return nil, nil
 	}
-	comments, err := m.dbconn.Query("SELECT * FROM comment WHERE ArticleID =? AND SiteId=?  AND Deleted=false", articleID, siteID)
+	var strBuffer bytes.Buffer
+	strBuffer.WriteString("SELECT * FROM comment WHERE ArticleID =? AND SiteId=? AND Deleted=false")
+	args := make([]interface{}, 0, 3) // []string
+	args = append(args, articleID, siteID)
+	if lastCommentID != nil && len(*lastCommentID) != 0 {
+		strBuffer.WriteString(" AND CommentID>?")
+		args = append(args, *lastCommentID)
+	}
+	queryString := strBuffer.String()
+	tutil.Log(fmt.Sprintf("数据库查询字符串：%v", queryString))
+	tutil.Log(fmt.Sprintf("参数：%v", args))
+	comments, err := m.dbconn.Query(queryString, args...)
 	if err != nil {
 		tutil.LogWarn(fmt.Sprintf("查询数据库失败，原因:%v", err))
 		return nil, nil
