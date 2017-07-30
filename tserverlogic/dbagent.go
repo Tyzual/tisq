@@ -117,7 +117,7 @@ func insertComment(cmd *dbCmd) {
 	// 传入了lastCommentID，获取lastCommentID之后的comment
 	if comm.lastCommentID != nil &&
 		len(*comm.lastCommentID) != 0 {
-		comments, users := tdb.GlobalSQLMgr().GetComment(dbComment.ArticleID, dbSite.SiteID, comm.lastCommentID)
+		comments, users := tdb.GlobalSQLMgr().GetComment(comm.articleKey, comm.domain, comm.lastCommentID)
 		oResult := dbResultToServerResult(comments, users)
 		cmd.result <- oResult
 	} else {
@@ -151,9 +151,7 @@ func queryComment(cmd *dbCmd) {
 	if !ok {
 		return
 	}
-	articleID := tdb.ArticleKeyToID(comm.articleKey)
-	siteID := tdb.SiteDomainToID(comm.domain)
-	comments, users := tdb.GlobalSQLMgr().GetComment(articleID, siteID, comm.lastCommentID)
+	comments, users := tdb.GlobalSQLMgr().GetComment(comm.articleKey, comm.domain, comm.lastCommentID)
 	oResult := dbResultToServerResult(comments, users)
 	cmd.result <- oResult
 }

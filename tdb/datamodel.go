@@ -1,10 +1,9 @@
 package tdb
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
-
-	"database/sql"
 
 	"github.com/tyzual/tisq/tutil"
 )
@@ -71,7 +70,7 @@ func NewSite(domain string) *Site {
 	}
 	site := Site{}
 	site.SiteDomain = domain
-	site.SiteID = SiteDomainToID(domain)
+	site.SiteID = siteDomainToID(domain)
 	site.CreateTime = time.Now().UTC()
 	return &site
 }
@@ -94,23 +93,17 @@ func NewComment(siteID, articleKey, userEmail, content string, replyID *uint32) 
 	comm.UserID = user.UserID
 	comm.SiteID = siteID
 	comm.TimeStamp = time.Now().UTC()
-	comm.ArticleID = ArticleKeyToID(articleKey)
+	comm.ArticleID = articleKeyToID(articleKey)
 	comm.ArticleKey = articleKey
 	comm.Content = content
 	comm.Deleted = false
 	return &comm
 }
 
-/*
-ArticleKeyToID 把articleKey转换为articlID
-*/
-func ArticleKeyToID(key string) string {
+func articleKeyToID(key string) string {
 	return tutil.MD5([]byte(key))
 }
 
-/*
-SiteDomainToID 把site domain转换为siteID
-*/
-func SiteDomainToID(domain string) string {
+func siteDomainToID(domain string) string {
 	return tutil.MD5([]byte(domain))
 }

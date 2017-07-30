@@ -315,17 +315,17 @@ func (m *Mysql) InsertComment(comm *Comment) bool {
 }
 
 /*
-GetComment 通过articleID和SiteId来查询评论
+GetComment 通过articleKey和SiteDomain来查询评论
 如果传入了lastCommentID 则返回 lastCommentID 以后的评论
 */
-func (m *Mysql) GetComment(articleID, siteID string, lastCommentID *string) ([]Comment, []User) {
-	if len(articleID) == 0 || len(siteID) == 0 {
+func (m *Mysql) GetComment(articleKey, siteDomain string, lastCommentID *string) ([]Comment, []User) {
+	if len(articleKey) == 0 || len(siteDomain) == 0 {
 		return nil, nil
 	}
 	var strBuffer bytes.Buffer
-	strBuffer.WriteString("SELECT * FROM comment WHERE ArticleID =? AND SiteId=? AND Deleted=false")
+	strBuffer.WriteString("SELECT CommentID,ArticleID,ArticleKey,UserId,comment.SiteId,Content,TimeStamp,ReplyID,Deleted FROM comment,site WHERE ArticleKey=? AND SiteDomain=? AND Deleted=false AND comment.SiteId=site.SiteId")
 	args := make([]interface{}, 0, 3) // []string
-	args = append(args, articleID, siteID)
+	args = append(args, articleKey, siteDomain)
 	if lastCommentID != nil && len(*lastCommentID) != 0 {
 		strBuffer.WriteString(" AND CommentID>?")
 		args = append(args, *lastCommentID)
@@ -352,7 +352,7 @@ func (m *Mysql) GetComment(articleID, siteID string, lastCommentID *string) ([]C
 		userIds = append(userIds, comm.UserID)
 	}
 	if len(comms) == 0 {
-		tutil.Log(fmt.Sprintf("没找到(%v, %v)为的评论", articleID, siteID))
+		tutil.Log(fmt.Sprintf("没找到(%v, %v)为的评论", articleKey, siteDomain))
 		return nil, nil
 	}
 

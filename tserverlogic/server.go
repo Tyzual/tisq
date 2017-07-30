@@ -47,7 +47,7 @@ articlekey	评论文章的特征码(可以使用文章的URL地址)
 content		评论内容
 replyid		如果评论是回复某条评论，则在这里填写回复评论的评论ID，如果不是回复，不要设置这个字段
 
-lastcommentid	客户端最新一条评论的评论id，若不传这个值，服务器会返回articlekey下的所有评论，否则返回lastcommentid以后的评论。若找不到lastcommentid所对应的评论。则返回错误。
+lastcommentid	客户端最新一条评论的评论id，若不传这个值，服务器会返回刚刚插入的评论，否则返回lastcommentid以后的评论。若找不到lastcommentid所对应的评论。则返回错误。
 */
 func HandleAddComment(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()

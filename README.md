@@ -30,7 +30,7 @@
 | articlekey | 评论文章的特征码(可以使用文章的URL地址) |
 | content | 评论内容 |
 | replyid | 如果评论是回复某条评论，则在这里填写回复评论的评论ID，如果不是回复，不要传递这个参数 |
-| lastcommentid | 客户端最新一条评论的评论id，若不传这个值，服务器会返回articlekey下的所有评论，否则返回lastcommentid以后的评论。若找不到lastcommentid所对应的评论。则返回错误。 |
+| lastcommentid | 客户端最新一条评论的评论id，若不传这个值，服务器会返回__刚插入的评论__，否则返回lastcommentid以后的评论。若找不到lastcommentid所对应的评论。则返回错误。 |
 
 #### 返回值
 若成功，HTTP状态码200，Body为JSON格式内容。示例：
@@ -96,7 +96,7 @@ JSON个字段意义如下
 | --- | --- |
 |domain | 博客的域名 |
 | articlekey | 评论文章的特征码(可以使用文章的URL地址) |
-| lastcommentid | 客户端最新一条评论的评论id，若不传这个值，服务器会返回articlekey下的所有评论，否则返回lastcommentid以后的评论。若找不到lastcommentid所对应的评论。则返回错误。 |
+| lastcommentid | 客户端最新一条评论的评论id，若不传这个值，服务器会返回__articlekey下的所有评论__，否则返回lastcommentid以后的评论。若找不到lastcommentid所对应的评论。则返回错误。 |
 
 #### 返回值
 与 添加评论接口 返回值一样
